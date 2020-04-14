@@ -1,7 +1,9 @@
+package lock;
+
 import javax.swing.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-// This BST assumes NO DUPLICATE VALUES, if there are need to edit class to
+// This lock.BST assumes NO DUPLICATE VALUES, if there are need to edit class to
 // add count variable, better for AVL trees, and edit functions
 public class BST {
 

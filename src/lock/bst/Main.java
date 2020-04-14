@@ -1,3 +1,5 @@
+package lock;
+
 public class Main {
     public static void main(String[] args) {
         BST t = new BST(5);
