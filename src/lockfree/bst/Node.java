@@ -6,4 +6,8 @@ public class Node {
     public Node(int k) {
         key = k;
     }
+
+    public String toString() {
+        return "" + key;
+    }
 }
