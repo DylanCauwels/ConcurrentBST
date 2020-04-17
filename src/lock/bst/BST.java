@@ -1,6 +1,5 @@
-package lock;
+package lock.bst;
 
-import javax.swing.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 // This lock.BST assumes NO DUPLICATE VALUES, if there are need to edit class to

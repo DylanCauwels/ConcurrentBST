@@ -1,4 +1,6 @@
-package lock;
+package lock.bst;
+
+import lock.BST;
 
 public class Main {
     public static void main(String[] args) {
