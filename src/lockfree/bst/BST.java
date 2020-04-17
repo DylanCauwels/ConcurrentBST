@@ -70,7 +70,39 @@ public class BST {
     // T if key found and deleted
     // F if key not present in tree
     public boolean delete(int key) {
-        return false;
+        Internal gp, p;
+        Leaf l;
+        AtomicStampedReference<Info> pupdate, gpupdate, result;
+        DeleteInfo op;
+
+        while (true) {
+            // check that the key we're trying to delete is in the tree
+            SearchReturn nodeSearch = search(key);
+            if (nodeSearch.l.key != key) return false;
+            // if grandparent state not clean, help out
+            if (nodeSearch.gpupdate.getStamp() != CLEAN)  {
+                help(nodeSearch.gpupdate);
+            }
+            // if parent state not clean, help out
+            else if (nodeSearch.pupdate.getStamp() != CLEAN) {
+                help(nodeSearch.pupdate);
+            }
+            // ancestors clean, attempt the delete
+            else {
+                pupdate = nodeSearch.pupdate;
+                gpupdate = nodeSearch.gpupdate;
+                // create new Info tag notifying other threads of imminent deletion
+                op = new DeleteInfo(nodeSearch.l, nodeSearch.parent, (Internal)nodeSearch.gParent, pupdate.getReference(), pupdate.getStamp());
+                if (gpupdate.compareAndSet(pupdate.getReference(), op, pupdate.getStamp(), DFLAG)) {
+                    // try to mark the parent then delete, on failure retry entire process
+                    if (helpDelete(op)) {
+                        return true;
+                    }
+                } else {
+                    help(pupdate);
+                }
+            }
+        }
     }
 
     public String toString() {
@@ -116,7 +148,9 @@ public class BST {
     }
 
     private SearchReturn search(int key) {
+        // p points to encapsulating internal node
         Node gp = null, p = null;
+        // l will eventually point to leaf node
         Node l = this.root;
         AtomicStampedReference<Info> gpup = null, pup = null;
 
@@ -146,12 +180,28 @@ public class BST {
         op.parent.update.compareAndSet(op, op, IFLAG, CLEAN);
     }
 
-    private void helpDelete(DeleteInfo op) {
+    private boolean helpDelete(DeleteInfo op) {
+        // TODO: not sure if im getting the EXPECTED value or the CURRENT value for the parent, changed  from op.parent.update.getStamp() to CLEAN
+        if (op.parent.update.compareAndSet(op.parent.update.getReference(), op.pupdate.getReference(), CLEAN, MARK)) {
+            // CAS success, finish deletion
+            helpMarked(op);
+            return true;
+        // CAS failed, help the WIP parent finish then remove the flag on the grandparent to try again
+        } else {
+            help(op.parent.update);
+            op.gParent.update.compareAndSet(op.gParent.update.getReference(), op.gParent.update.getReference(), DFLAG, CLEAN);
+            return false;
+        }
 
     }
 
     private void helpMarked(DeleteInfo op) {
-
+        // grab node that isn't the leaf Node to be deleted
+        Node other = (op.parent.left.get().key == op.leaf.key) ? op.parent.left.get() : op.parent.right.get();
+        // replace internal parent node with sibling of removed node
+        CASChild(op.gParent, op.parent, other);
+        // remove flag from grandparent
+        op.gParent.update.compareAndSet(op.gParent.update.getReference(), op.gParent.update.getReference(), DFLAG, CLEAN);
     }
 
     private void CASChild(Internal parent, Node old, Node newNode) {
