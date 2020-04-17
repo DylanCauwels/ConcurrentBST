@@ -1,6 +1,6 @@
 package lock.bst;
 
-import lock.BST;
+//import lock.BST;
 import org.junit.Test;
 
 import java.util.Random;

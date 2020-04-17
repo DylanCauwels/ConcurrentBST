@@ -1,33 +1,38 @@
 package lockfree.bst;
 
 import org.junit.Test;
-import java.util.Random;
+
+import java.util.ArrayList;
+
+import static org.junit.Assert.assertTrue;
 
 public class Tester {
 
     @Test
-    public void test() {
+    public void sequentialInsertAll() {
         BST tree = new BST();
+        int numNodes = 10000;
+        ArrayList<Integer> missedValues = new ArrayList<>();
 
-        int[] inserts = new int[100];
-        Random r = new Random();
-        for (int i = 0; i < 100; i++) {
-            inserts[i] = r.nextInt(1000);
-        }
-
-        for (int i:inserts) {
+        for (int i = 0; i < numNodes; i++) {
             tree.insert(i);
         }
+        for (int i = 0; i < numNodes; i++) {
+            if (!tree.contains(i))
+                missedValues.add(i);
+        }
 
-        System.out.println(tree);
-//        Assert.assertEquals(true, true);
+        assertTrue(missedValues.isEmpty());
     }
 
     @Test
-    public void concurrentInsert() throws InterruptedException {
+    public void concurrentInsertAll() throws InterruptedException {
         BST tree = new BST();
+        int numNodes = 10000;
         Putter put = new Putter(tree);
-        Thread[] threads = new Thread[10000];
+        Thread[] threads = new Thread[numNodes];
+        ArrayList<Integer> missedValues = new ArrayList<>();
+
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(put, String.valueOf(i));
             threads[i].start();
@@ -37,11 +42,101 @@ public class Tester {
             t.join();
         }
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < numNodes; i++) {
             if (!tree.contains(i)) {
-                System.out.println("does not contain: " + i);
+                missedValues.add(i);
+                System.out.println("missed value on concurrent insert all: " + i);
             }
         }
+
+        assertTrue(missedValues.isEmpty());
+    }
+
+    @Test
+    public void sequentialDeleteAll() {
+        BST tree = new BST();
+        int numNodes = 10000;
+        ArrayList<Integer> remainingValues = new ArrayList<>();
+
+        for (int i = 0; i < numNodes; i++) {
+            tree.insert(i);
+        }
+        for (int i = 0; i < numNodes; i++) {
+            tree.delete(i);
+        }
+        for (int i = 0; i < numNodes; i++) {
+            if (tree.contains(i))
+                remainingValues.add(i);
+        }
+
+        assertTrue(remainingValues.isEmpty());
+    }
+
+    @Test
+    public void concurrentDeleteSome() throws InterruptedException {
+        BST tree = new BST();
+        int numNodes = 10000;
+        Remover rem = new Remover(tree);
+        Thread[] threads = new Thread[numNodes];
+        ArrayList<Integer> missedValues = new ArrayList<>();
+
+        for (int i = 0; i < numNodes; i++) {
+            tree.insert(i);
+        }
+
+        for (int i = 0; i < threads.length; i++) {
+            if (i % 3 == 0) {
+                threads[i] = new Thread(rem, String.valueOf(i));
+                threads[i].start();
+            } else {
+                threads[i] = null;
+            }
+
+        }
+
+        for (Thread t: threads) {
+            if (t != null) t.join();
+        }
+
+        for (int i = 0; i < numNodes; i++) {
+            if (i % 3 == 0 && tree.contains(i)) {
+                missedValues.add(i);
+                System.out.println("missed value on concurrent delete some: " + i);
+            }
+        }
+
+        assertTrue(missedValues.isEmpty());
+    }
+
+    @Test
+    public void concurrentDeleteAll() throws InterruptedException {
+        BST tree = new BST();
+        int numNodes = 10000;
+        Remover rem = new Remover(tree);
+        Thread[] threads = new Thread[numNodes];
+        ArrayList<Integer> missedValues = new ArrayList<>();
+
+        for (int i = 0; i < numNodes; i++) {
+            tree.insert(i);
+        }
+
+        for (int i = 0; i < threads.length; i++) {
+            threads[i] = new Thread(rem, String.valueOf(i));
+            threads[i].start();
+        }
+
+        for (Thread t: threads) {
+            t.join();
+        }
+
+        for (int i = 0; i < numNodes; i++) {
+            if (tree.contains(i)) {
+                missedValues.add(i);
+                System.out.println("missed value on concurrent delete all: " + i);
+            }
+        }
+
+        assertTrue(missedValues.isEmpty());
     }
 
     class Remover implements Runnable {
@@ -53,7 +148,7 @@ public class Tester {
 
         @Override
         public void run() {
-
+            tree.delete(Integer.valueOf(Thread.currentThread().getName()));
         }
     }
 

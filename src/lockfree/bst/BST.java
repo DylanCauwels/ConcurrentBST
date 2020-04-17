@@ -17,7 +17,7 @@ public class BST {
     public BST() {
         // initialization of dummy tree
         root = new Internal(dummyTwo, new Leaf(dummyOne), new Leaf(dummyTwo),
-                                null, CLEAN);
+                null, CLEAN);
 
     }
 
@@ -30,7 +30,7 @@ public class BST {
         AtomicStampedReference<Info> pupdate, oldResult;
         InsertInfo op;
 
-        while(true) {
+        while (true) {
             SearchReturn s = search(key);
             p = s.parent;
             l = s.l;
@@ -70,9 +70,7 @@ public class BST {
     // T if key found and deleted
     // F if key not present in tree
     public boolean delete(int key) {
-        Internal gp, p;
-        Leaf l;
-        AtomicStampedReference<Info> pupdate, gpupdate, result;
+        AtomicStampedReference<Info> pupdate, gpupdate;
         DeleteInfo op;
 
         while (true) {
@@ -80,7 +78,7 @@ public class BST {
             SearchReturn nodeSearch = search(key);
             if (nodeSearch.l.key != key) return false;
             // if grandparent state not clean, help out
-            if (nodeSearch.gpupdate.getStamp() != CLEAN)  {
+            if (nodeSearch.gpupdate.getStamp() != CLEAN) {
                 help(nodeSearch.gpupdate);
             }
             // if parent state not clean, help out
@@ -91,15 +89,15 @@ public class BST {
             else {
                 pupdate = nodeSearch.pupdate;
                 gpupdate = nodeSearch.gpupdate;
-                // create new Info tag notifying other threads of imminent deletion
-                op = new DeleteInfo(nodeSearch.l, nodeSearch.parent, (Internal)nodeSearch.gParent, pupdate.getReference(), pupdate.getStamp());
-                if (gpupdate.compareAndSet(pupdate.getReference(), op, pupdate.getStamp(), DFLAG)) {
+                // create new Info tag notifying giving helping ability to other processes
+                op = new DeleteInfo(nodeSearch.l, nodeSearch.parent, nodeSearch.gParent, pupdate);
+                if (gpupdate.compareAndSet(null, op, CLEAN, DFLAG)) {
                     // try to mark the parent then delete, on failure retry entire process
                     if (helpDelete(op)) {
                         return true;
                     }
                 } else {
-                    help(pupdate);
+                    help(gpupdate);
                 }
             }
         }
@@ -114,10 +112,10 @@ public class BST {
         if (node != null) {
             if (node instanceof Internal) {
                 displayNodes = displayNodes +
-                        this.inOrder(((Internal)node).left.get());
+                        this.inOrder(((Internal) node).left.get());
 //                displayNodes = displayNodes + node.toString() + "\n";
                 displayNodes = displayNodes +
-                        this.inOrder(((Internal)node).right.get());
+                        this.inOrder(((Internal) node).right.get());
             } else {
                 if (node.key != dummyOne && node.key != dummyTwo)
                     displayNodes = displayNodes + node.toString() + "\n";
@@ -129,15 +127,17 @@ public class BST {
     }
 
 
-    /** PRIVATE HELPERS **/
+    /**
+     * PRIVATE HELPERS
+     **/
 
     class SearchReturn {
         public Internal parent;
-        public Node gParent;
+        public Internal gParent;
         public Leaf l;
         public AtomicStampedReference<Info> gpupdate, pupdate;
 
-        public SearchReturn(Node gParent, Internal parent, Leaf l,
+        public SearchReturn(Internal gParent, Internal parent, Leaf l,
                             AtomicStampedReference<Info> pupdate, AtomicStampedReference<Info> gpupdate) {
             this.gParent = gParent;
             this.parent = parent;
@@ -158,13 +158,13 @@ public class BST {
             gp = p;
             p = l;
             gpup = pup;
-            pup = ((Internal)p).update;
+            pup = ((Internal) p).update;
             // traverse
             l = key < l.key ? ((Internal) p).left.get() : ((Internal) p).right.get();
         }
 
         // if the key of l is not dummyOne, then GP is also an Internal
-        return new SearchReturn(gp, (Internal) p, (Leaf) l, pup, gpup);
+        return new SearchReturn((Internal) gp, (Internal) p, (Leaf) l, pup, gpup);
     }
 
     private void help(AtomicStampedReference u) {
@@ -177,19 +177,19 @@ public class BST {
 
     private void helpInsert(InsertInfo op) {
         CASChild(op.parent, op.leaf, op.newInternal);
-        op.parent.update.compareAndSet(op, op, IFLAG, CLEAN);
+        op.parent.update.compareAndSet(op, null, IFLAG, CLEAN);
     }
 
     private boolean helpDelete(DeleteInfo op) {
-        // TODO: not sure if im getting the EXPECTED value or the CURRENT value for the parent, changed  from op.parent.update.getStamp() to CLEAN
-        if (op.parent.update.compareAndSet(op.parent.update.getReference(), op.pupdate.getReference(), CLEAN, MARK)) {
+        if (op.parent.update.compareAndSet(null, op, CLEAN, MARK)) {
             // CAS success, finish deletion
             helpMarked(op);
             return true;
-        // CAS failed, help the WIP parent finish then remove the flag on the grandparent to try again
         } else {
+            // CAS failed, help the WIP parent finish then remove the flag on the grandparent to try again
             help(op.parent.update);
-            op.gParent.update.compareAndSet(op.gParent.update.getReference(), op.gParent.update.getReference(), DFLAG, CLEAN);
+            if (!op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN))
+                System.out.println("WARNING: gp node not updating correctly on helpDelete abort");
             return false;
         }
 
@@ -197,11 +197,11 @@ public class BST {
 
     private void helpMarked(DeleteInfo op) {
         // grab node that isn't the leaf Node to be deleted
-        Node other = (op.parent.left.get().key == op.leaf.key) ? op.parent.left.get() : op.parent.right.get();
+        Node other = (op.parent.left.get().key == op.leaf.key) ? op.parent.right.get() : op.parent.left.get();
         // replace internal parent node with sibling of removed node
         CASChild(op.gParent, op.parent, other);
         // remove flag from grandparent
-        op.gParent.update.compareAndSet(op.gParent.update.getReference(), op.gParent.update.getReference(), DFLAG, CLEAN);
+        op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN);
     }
 
     private void CASChild(Internal parent, Node old, Node newNode) {
@@ -213,25 +213,4 @@ public class BST {
             }
         }
     }
-
-//    // inner class representing a single node of the tree
-//    class Node {
-//        public int key;
-//        public AtomicMarkableReference<Children> children;
-//
-//        public Node(int key, Node left, Node right) {
-//            this.key = key;
-//            children = new AtomicMarkableReference<>(new Children(left, right), false);
-//        }
-//
-//        // inner class to represent both children with a single pointer for CAS operations
-//        class Children {
-//            public Node left, right;
-//
-//            public Children(Node left, Node right) {
-//                this.left = left;
-//                this.right = right;
-//            }
-//        }
-//    }
 }

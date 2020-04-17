@@ -1,6 +1,6 @@
 package lock.bst;
 
-import lock.BST;
+//import lock.*;
 
 public class Main {
     public static void main(String[] args) {
