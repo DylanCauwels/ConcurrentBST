@@ -139,6 +139,35 @@ public class Tester {
         assertTrue(missedValues.isEmpty());
     }
 
+    @Test
+    public void concurrentInsertAndDeleteSome() throws InterruptedException {
+        BST tree = new BST();
+        int numNodes = 10000;
+        Putter put = new Putter(tree);
+        Remover rem = new Remover(tree);
+        Thread[] putters = new Thread[numNodes];
+        Thread[] removers = new Thread[numNodes];
+        ArrayList<Integer> missedValues = new ArrayList<>();
+
+        for (int i = 0; i < numNodes; i++) {
+            tree.insert(i);
+        }
+
+        for (int i = 0; i < putters.length; i++) {
+            putters[i] = new Thread(put, String.valueOf(i));
+            putters[i].start();
+            removers[i] = new Thread(rem, String.valueOf(i));
+            removers[i].start();
+        }
+
+        for (int i = 0; i < numNodes; i++) {
+            putters[i].join();
+            removers[i].join();
+        }
+
+        assertTrue(true);
+    }
+
     class Remover implements Runnable {
         BST tree;
 

@@ -27,7 +27,7 @@ public class BST {
         Internal p, newInternal;
         Leaf l, newSibling;
         Leaf newLeaf = new Leaf(key);
-        AtomicStampedReference<Info> pupdate, oldResult;
+        AtomicStampedReference<Info> pupdate;
         InsertInfo op;
 
         while (true) {
@@ -35,9 +35,12 @@ public class BST {
             p = s.parent;
             l = s.l;
             pupdate = s.pupdate;
-            if (l.key == key) return false;
-            if (pupdate.getStamp() != CLEAN) help(pupdate);
-            else {
+            // check for key already in tree
+            if (l.key == key) {
+                return false;
+            } else if (pupdate.getStamp() != CLEAN) {
+                help(pupdate);
+            } else {
                 newSibling = new Leaf(l.key);
                 Node left, right;
                 if (newLeaf.key < newSibling.key) {
@@ -49,12 +52,12 @@ public class BST {
                 }
                 newInternal = new Internal(Integer.max(key, l.key), left, right, null, CLEAN);
                 op = new InsertInfo(l, p, newInternal);
-                oldResult = p.update;
-                if (p.update.compareAndSet(pupdate.getReference(), op, pupdate.getStamp(), IFLAG)) {
-                    helpInsert(op);
-                    return true;
+                if (pupdate.compareAndSet(null, op, CLEAN, IFLAG)) {
+                    if (helpInsert(op)) {
+                        return true;
+                    }
                 } else {
-                    help(oldResult);
+                    help(pupdate);
                 }
             }
         }
@@ -113,7 +116,6 @@ public class BST {
             if (node instanceof Internal) {
                 displayNodes = displayNodes +
                         this.inOrder(((Internal) node).left.get());
-//                displayNodes = displayNodes + node.toString() + "\n";
                 displayNodes = displayNodes +
                         this.inOrder(((Internal) node).right.get());
             } else {
@@ -175,21 +177,18 @@ public class BST {
         }
     }
 
-    private void helpInsert(InsertInfo op) {
-        CASChild(op.parent, op.leaf, op.newInternal);
-        op.parent.update.compareAndSet(op, null, IFLAG, CLEAN);
+    private boolean helpInsert(InsertInfo op) {
+        if (op == null) return false;
+        return CASChild(op.parent, op.leaf, op.newInternal) && op.parent.update.compareAndSet(op, null, IFLAG, CLEAN);
     }
 
     private boolean helpDelete(DeleteInfo op) {
         if (op.parent.update.compareAndSet(null, op, CLEAN, MARK)) {
-            // CAS success, finish deletion
             helpMarked(op);
             return true;
         } else {
-            // CAS failed, help the WIP parent finish then remove the flag on the grandparent to try again
             help(op.parent.update);
-            if (!op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN))
-                System.out.println("WARNING: gp node not updating correctly on helpDelete abort");
+            op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN);
             return false;
         }
 
@@ -204,13 +203,14 @@ public class BST {
         op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN);
     }
 
-    private void CASChild(Internal parent, Node old, Node newNode) {
+    private boolean CASChild(Internal parent, Node old, Node newNode) {
         if (parent != null && newNode != null) {
             if (newNode.key < parent.key) {
-                parent.left.compareAndSet(old, newNode);
+                return parent.left.compareAndSet(old, newNode);
             } else {
-                parent.right.compareAndSet(old, newNode);
+                return parent.right.compareAndSet(old, newNode);
             }
         }
+        return false;
     }
 }
