@@ -1,6 +1,6 @@
 package lock.bst;
 
-import lock.BST;
+
 
 public class Main {
     public static void main(String[] args) {
@@ -9,14 +9,17 @@ public class Main {
 //        t.add(6);t.add(15);t.add(18);
 //        t.inorderTraversal();
 //
-//        t.delete(12);t.delete(30);
+//        t.delete(5);t.delete(18);
 //        t.inorderTraversal();
 
         BST s = new BST(8);
         s.add(2);s.add(7);s.add(6);s.add(5);s.add(4);
+        //
         s.inorderTraversal();
-
-        s.delete(2);
+        s.delete(6);
+        s.inorderTraversal();
+        s.delete(8);
+        s.add(10);
         s.inorderTraversal();
     }
 }

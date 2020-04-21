@@ -85,7 +85,7 @@ public class BST {
     }
 
     public boolean delete(int val){
-        // find node, r is locked when returned
+        // find node, r and its parent are locked when returned
         Node r = find(val);
         if(r== null){
             System.out.println("No node of value: " +val);
@@ -93,24 +93,101 @@ public class BST {
         }
 
         //find node to replace with, r still locked
-        Node a = findSuccessor(r);
+
+
+        Node a = null;
+        boolean flag = true;
+        int i = getNumChild(r);
+        System.out.println("\n\ncase: " + i);
+        switch (i) {
+            case 0:
+                a = null;
+                break;
+            case 1:
+                //parent of a is the node to be deleted
+                a = (r.left == null) ? r.right:r.left;
+                a.lock.lock();
+                break;
+            case 2:
+                // a and parent are locked
+                a = fSucc(r.right);
+                flag = (a == r.right);
+                break;
+            default:
+                System.out.println("shouldnt be here");
+                break;
+
+        }
 
         //if no successor ('root' is a leaf) just delete
         if(a == null){
-            deleteleaf(r);
+            if (r == root) {
+                r.lock.unlock();
+                root = null;
+            }
+            else {
+                if (r.parent.left == r) {
+                    r.parent.left = null;
+                }
+                else {
+                    r.parent.right = null;
+                }
+                r.parent.lock.unlock();
+            }
+
             return true;
         }
 
         System.out.println("\n"+ a.val +" " +r.val);
-        // if successor swap values and
-        swap(r,a);
-        System.out.println("a: "+a.val +" r: " +r.val);
 
-        // delete the leaf node
-        deleteleaf(a);
-        r.lock.unlock();
-        a.lock.unlock();
-        return true; //success
+        if (i == 1) {
+            if (r == root) {
+                root = a;
+            }
+            else {
+                if (r.parent.left == r) {
+                    r.parent.left = a;
+                    a.parent = r.parent;
+                }
+                else {
+                    r.parent.right = a;
+                    a.parent = r.parent;
+                }
+                r.parent.lock.unlock();
+            }
+            a.lock.unlock();
+            return true;
+        }
+        else {
+            swap(r,a);
+            if (a.parent.left == a) {
+                a.parent.left = a.left;
+            }
+            else {
+                a.parent.right = a.right;
+            }
+            a.parent.lock.unlock();
+            r.lock.unlock();
+            return true;
+        }
+
+
+        // if successor swap values and
+//        swap(r,a);
+//        System.out.println("a: "+a.val +" r: " +r.val);
+//        inorderTraversal();
+//
+//        //now need to delete whats in node a, guaranteed to be leaf or single child
+//        if (i == 2) {
+//
+//        }
+//        deleteleaf(a);
+//        r.lock.unlock();
+//        if (!flag) {
+//            a.parent.lock.unlock();
+//        }
+//
+//        return true; //success
     }
 
     //delete's a leaf node or a node with only 1 child
@@ -144,6 +221,21 @@ public class BST {
             par.lock.unlock();
             return;
         }
+    }
+
+    private Node fSucc(Node parent) {
+        Node right = parent;
+        right.lock.lock();
+        while (right.left != null) {
+            //if left not null lock to access
+            right.left.lock.lock();
+            right = right.left;
+            //traverse and unlock parent
+            if (right.left != null) {
+                right.parent.lock.unlock();
+            }
+        }
+        return right;
     }
 
     //Find method to get inorder predecessor or successor
@@ -181,6 +273,15 @@ public class BST {
         return null;
     }
 
+    private int getNumChild(Node parent) {
+        if(parent.right == null && parent.left == null)
+            return 0;
+        else if(parent.right != null && parent.left != null) {
+            return 2;
+        }
+        return 1;
+    }
+
     //takes 2 nodes and simples swaps their Vals, nothing else
     private void swap (Node a, Node b){
         int temp = a.val;
@@ -197,6 +298,9 @@ public class BST {
     private Node findHelper(Node parent, int val){
         //if node found return it
         if (parent.val == val){
+            if (parent.parent != null) {
+                parent.parent.lock.lock(); //TODO: Might have to change and find another way to relock the parent
+            }
             return parent;
         }
         else{
