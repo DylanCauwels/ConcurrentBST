@@ -1,6 +1,6 @@
 package lockfree.bst;
 
-// nothing more than a type specifier for a Node
+// type specifier for a Leaf data node
 public class Leaf extends Node {
     public Leaf(int key) {
         super(key);

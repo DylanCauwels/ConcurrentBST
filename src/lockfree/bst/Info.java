@@ -1,5 +1,6 @@
 package lockfree.bst;
 
+// used to let other processes help complete operations on nodes they need to access
 // superclass for IInfo and DInfo
 public class Info {
     public Leaf leaf;

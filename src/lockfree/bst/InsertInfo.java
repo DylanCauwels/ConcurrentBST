@@ -1,5 +1,6 @@
 package lockfree.bst;
 
+// Info class containing all the fields that a process needs to complete an insert operation
 public class InsertInfo extends Info {
     public Internal newInternal;
 

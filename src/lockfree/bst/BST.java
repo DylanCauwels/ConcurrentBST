@@ -17,7 +17,7 @@ public class BST {
     public BST() {
         // initialization of dummy tree
         root = new Internal(dummyTwo, new Leaf(dummyOne), new Leaf(dummyTwo),
-                                null, CLEAN);
+                null, CLEAN);
 
     }
 
@@ -27,17 +27,20 @@ public class BST {
         Internal p, newInternal;
         Leaf l, newSibling;
         Leaf newLeaf = new Leaf(key);
-        AtomicStampedReference<Info> pupdate, oldResult;
+        AtomicStampedReference<Info> pupdate;
         InsertInfo op;
 
-        while(true) {
+        while (true) {
             SearchReturn s = search(key);
             p = s.parent;
             l = s.l;
             pupdate = s.pupdate;
-            if (l.key == key) return false;
-            if (pupdate.getStamp() != CLEAN) help(pupdate);
-            else {
+            // check for key already in tree
+            if (l.key == key) {
+                return false;
+            } else if (pupdate.getStamp() != CLEAN) {
+                help(pupdate);
+            } else {
                 newSibling = new Leaf(l.key);
                 Node left, right;
                 if (newLeaf.key < newSibling.key) {
@@ -49,12 +52,12 @@ public class BST {
                 }
                 newInternal = new Internal(Integer.max(key, l.key), left, right, null, CLEAN);
                 op = new InsertInfo(l, p, newInternal);
-                oldResult = p.update;
-                if (p.update.compareAndSet(pupdate.getReference(), op, pupdate.getStamp(), IFLAG)) {
-                    helpInsert(op);
-                    return true;
+                if (pupdate.compareAndSet(null, op, CLEAN, IFLAG)) {
+                    if (helpInsert(op)) {
+                        return true;
+                    }
                 } else {
-                    help(oldResult);
+                    help(pupdate);
                 }
             }
         }
@@ -70,7 +73,37 @@ public class BST {
     // T if key found and deleted
     // F if key not present in tree
     public boolean delete(int key) {
-        return false;
+        AtomicStampedReference<Info> pupdate, gpupdate;
+        DeleteInfo op;
+
+        while (true) {
+            // check that the key we're trying to delete is in the tree
+            SearchReturn nodeSearch = search(key);
+            if (nodeSearch.l.key != key) return false;
+            // if grandparent state not clean, help out
+            if (nodeSearch.gpupdate.getStamp() != CLEAN) {
+                help(nodeSearch.gpupdate);
+            }
+            // if parent state not clean, help out
+            else if (nodeSearch.pupdate.getStamp() != CLEAN) {
+                help(nodeSearch.pupdate);
+            }
+            // ancestors clean, attempt the delete
+            else {
+                pupdate = nodeSearch.pupdate;
+                gpupdate = nodeSearch.gpupdate;
+                // create new Info tag notifying giving helping ability to other processes
+                op = new DeleteInfo(nodeSearch.l, nodeSearch.parent, nodeSearch.gParent, pupdate);
+                if (gpupdate.compareAndSet(null, op, CLEAN, DFLAG)) {
+                    // try to mark the parent then delete, on failure retry entire process
+                    if (helpDelete(op)) {
+                        return true;
+                    }
+                } else {
+                    help(gpupdate);
+                }
+            }
+        }
     }
 
     public String toString() {
@@ -82,10 +115,9 @@ public class BST {
         if (node != null) {
             if (node instanceof Internal) {
                 displayNodes = displayNodes +
-                        this.inOrder(((Internal)node).left.get());
-//                displayNodes = displayNodes + node.toString() + "\n";
+                        this.inOrder(((Internal) node).left.get());
                 displayNodes = displayNodes +
-                        this.inOrder(((Internal)node).right.get());
+                        this.inOrder(((Internal) node).right.get());
             } else {
                 if (node.key != dummyOne && node.key != dummyTwo)
                     displayNodes = displayNodes + node.toString() + "\n";
@@ -97,15 +129,17 @@ public class BST {
     }
 
 
-    /** PRIVATE HELPERS **/
+    /**
+     * PRIVATE HELPERS
+     **/
 
     class SearchReturn {
         public Internal parent;
-        public Node gParent;
+        public Internal gParent;
         public Leaf l;
         public AtomicStampedReference<Info> gpupdate, pupdate;
 
-        public SearchReturn(Node gParent, Internal parent, Leaf l,
+        public SearchReturn(Internal gParent, Internal parent, Leaf l,
                             AtomicStampedReference<Info> pupdate, AtomicStampedReference<Info> gpupdate) {
             this.gParent = gParent;
             this.parent = parent;
@@ -116,7 +150,9 @@ public class BST {
     }
 
     private SearchReturn search(int key) {
+        // p points to encapsulating internal node
         Node gp = null, p = null;
+        // l will eventually point to leaf node
         Node l = this.root;
         AtomicStampedReference<Info> gpup = null, pup = null;
 
@@ -124,13 +160,13 @@ public class BST {
             gp = p;
             p = l;
             gpup = pup;
-            pup = ((Internal)p).update;
+            pup = ((Internal) p).update;
             // traverse
             l = key < l.key ? ((Internal) p).left.get() : ((Internal) p).right.get();
         }
 
         // if the key of l is not dummyOne, then GP is also an Internal
-        return new SearchReturn(gp, (Internal) p, (Leaf) l, pup, gpup);
+        return new SearchReturn((Internal) gp, (Internal) p, (Leaf) l, pup, gpup);
     }
 
     private void help(AtomicStampedReference u) {
@@ -141,47 +177,40 @@ public class BST {
         }
     }
 
-    private void helpInsert(InsertInfo op) {
-        CASChild(op.parent, op.leaf, op.newInternal);
-        op.parent.update.compareAndSet(op, op, IFLAG, CLEAN);
+    private boolean helpInsert(InsertInfo op) {
+        if (op == null) return false;
+        return CASChild(op.parent, op.leaf, op.newInternal) && op.parent.update.compareAndSet(op, null, IFLAG, CLEAN);
     }
 
-    private void helpDelete(DeleteInfo op) {
+    private boolean helpDelete(DeleteInfo op) {
+        if (op.parent.update.compareAndSet(null, op, CLEAN, MARK)) {
+            helpMarked(op);
+            return true;
+        } else {
+            help(op.parent.update);
+            op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN);
+            return false;
+        }
 
     }
 
     private void helpMarked(DeleteInfo op) {
-
+        // grab node that isn't the leaf Node to be deleted
+        Node other = (op.parent.left.get().key == op.leaf.key) ? op.parent.right.get() : op.parent.left.get();
+        // replace internal parent node with sibling of removed node
+        CASChild(op.gParent, op.parent, other);
+        // remove flag from grandparent
+        op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN);
     }
 
-    private void CASChild(Internal parent, Node old, Node newNode) {
+    private boolean CASChild(Internal parent, Node old, Node newNode) {
         if (parent != null && newNode != null) {
             if (newNode.key < parent.key) {
-                parent.left.compareAndSet(old, newNode);
+                return parent.left.compareAndSet(old, newNode);
             } else {
-                parent.right.compareAndSet(old, newNode);
+                return parent.right.compareAndSet(old, newNode);
             }
         }
+        return false;
     }
-
-//    // inner class representing a single node of the tree
-//    class Node {
-//        public int key;
-//        public AtomicMarkableReference<Children> children;
-//
-//        public Node(int key, Node left, Node right) {
-//            this.key = key;
-//            children = new AtomicMarkableReference<>(new Children(left, right), false);
-//        }
-//
-//        // inner class to represent both children with a single pointer for CAS operations
-//        class Children {
-//            public Node left, right;
-//
-//            public Children(Node left, Node right) {
-//                this.left = left;
-//                this.right = right;
-//            }
-//        }
-//    }
 }
