@@ -5,8 +5,8 @@ package lock.bst;
 public class Main {
     public static void main(String[] args) {
 //        BST t = new BST(5);
-//        t.add(26);t.add(2);t.add(12);t.add(27);t.add(35);t.add(30);t.add(31);
-//        t.add(6);t.add(15);t.add(18);
+//        t.insert(26);t.insert(2);t.insert(12);t.insert(27);t.insert(35);t.insert(30);t.insert(31);
+//        t.insert(6);t.insert(15);t.insert(18);
 //        t.inorderTraversal();
 //
 //        t.delete(5);
@@ -15,12 +15,14 @@ public class Main {
 //        t.inorderTraversal();
 
         BST s = new BST(8);
-        s.add(2);s.add(7);s.add(6);s.add(5);s.add(4);
+        s.insert(2);s.insert(7);s.insert(6);s.insert(5);s.insert(4);
         s.inorderTraversal();
         s.delete(6);
         s.inorderTraversal();
         s.delete(8);
-        s.add(10);
+        s.insert(10);
+        int x = 6;
+        System.out.println("Tree contains value " + x + "? " + s.contains(x));
         s.inorderTraversal();
     }
 }

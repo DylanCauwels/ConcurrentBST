@@ -3,7 +3,7 @@ package lock.bst;
 import java.util.concurrent.locks.ReentrantLock;
 
 // This lock.BST assumes NO DUPLICATE VALUES, if there are need to edit class to
-// add count variable, better for AVL trees, and edit functions
+// insert count variable, better for AVL trees, and edit functions
 public class BST {
 
     ReentrantLock treelock = new ReentrantLock();
@@ -30,13 +30,13 @@ public class BST {
     }
 
     public BST(){
-        Node n = null;
+        this.root = null;
     }
 
-    public boolean add(int val){
+    public boolean insert(int key){
         treelock.lock();
         if(this.root == null){
-            this.root = new Node(val);
+            this.root = new Node(key);
             treelock.unlock();
             return true;
         }
@@ -44,19 +44,19 @@ public class BST {
             Node n = this.root;
             n.lock.lock();
             treelock.unlock();
-            return addhelper(val, n);
+            return insertHelper(key, n);
         }
     }
 
-    private boolean addhelper(int val, Node parent){
-        if(parent.val == val){
+    private boolean insertHelper(int key, Node parent){
+        if(parent.val == key){
             parent.lock.unlock();
-            return false; //can't add, val already exists
+            return false; //can't insert, key already exists
         }
-        else if( val< parent.val){
-            //empty so can add node
+        else if( key< parent.val){
+            //empty so can insert node
             if(parent.left == null){
-                parent.left = new Node(val);
+                parent.left = new Node(key);
                 parent.left.parent = parent;
                 parent.lock.unlock();
                 return true; //success
@@ -65,12 +65,12 @@ public class BST {
                 Node left = parent.left;
                 left.lock.lock();
                 parent.lock.unlock();
-                return addhelper(val, left);
+                return insertHelper(key, left);
             }
         }
         else{
             if(parent.right == null){
-                parent.right = new Node(val);
+                parent.right = new Node(key);
                 parent.right.parent = parent;
                 parent.lock.unlock();
                 return true; //success
@@ -79,12 +79,12 @@ public class BST {
                 Node right = parent.right;
                 right.lock.lock();
                 parent.lock.unlock();
-                return addhelper(val, right);
+                return insertHelper(key, right);
             }
         }
     }
 
-    public boolean delete(int val) {
+    public boolean delete(int key) {
         treelock.lock();
         Node head = root;
         if (head == null) {
@@ -93,290 +93,120 @@ public class BST {
         }
         head.lock.lock();
         treelock.unlock();
-        Node r = null;
-        if (head.val == val) {
-            r = head;
+        Node toDelete = null;
+        if (head.val == key) {
+            toDelete = head;
         }
         else {
-            r = newFind(head, val);
+            toDelete = find(head, key);
         }
 
-        if (r == null) {
+        if (toDelete == null) {
             // all nodes have been unlocked
-            //System.out.println("No node of value: " +val);
+            //System.out.println("No node of value: " +key);
             return false; //no node of that value in tree
         }
-        // r and r.parent locked at this point
-        // now need to find node to replace r
+        // toDelete and toDelete.parent locked at this point
+        // now need to find node to replace toDelete
 
-        Node a = null;
+        Node successor = null;
         boolean flag = true;
-        int i = getNumChild(r);
-        //System.out.println("\n\ncase: " + i);
+        int i = getNumChild(toDelete);
         switch (i) {
             case 0:
-                a = null;
+                successor = null;
                 break;
             case 1:
-                //parent of a is the node to be deleted
-                a = (r.left == null) ? r.right:r.left;
-                a.lock.lock();
+                //parent of successor is the node to be deleted
+                successor = (toDelete.left == null) ? toDelete.right:toDelete.left;
+                successor.lock.lock();
                 break;
             case 2:
-                // a and parent are locked
-                a = fSucc(r.right);
-                flag = (a == r.right);
+                // successor and parent are locked
+                successor = findSuccessor(toDelete.right);
+                flag = (successor == toDelete.right);
                 break;
             default:
                 System.out.println("shouldnt be here");
                 break;
 
         }
-        //locks maintained for a == null -> r, r.parent (if r != root)
-        //r is a leaf, if its root set to null else remove reference from parent
+        //locks maintained for successor == null -> toDelete, toDelete.parent (if toDelete != root)
+        //toDelete is successor leaf, if its root set to null else remove reference from parent
         if(i == 0){
-            if (r == head) {
-                r.lock.unlock();
+            if (toDelete == head) {
+                toDelete.lock.unlock();
                 root = null;
             }
             else {
-                if (r.parent.left == r) {
-                    r.parent.left = null;
+                if (toDelete.parent.left == toDelete) {
+                    toDelete.parent.left = null;
                 }
                 else {
-                    r.parent.right = null;
+                    toDelete.parent.right = null;
                 }
-                assert r.parent.left != r && r.parent.right != r;
-//                try {r.parent.lock.unlock(); } catch (Exception e) {
-//                    System.err.println("case: " + i);
-//                    System.err.println("parent: " + r.parent.val);
-//                    System.err.println("r: " + r.val);
-//                    System.exit(1);
-//                }//TODO illegal state monitor exception here
-                r.parent.lock.unlock();
-                r.lock.unlock();
+                assert toDelete.parent.left != toDelete && toDelete.parent.right != toDelete;
+                toDelete.parent.lock.unlock();
+                toDelete.lock.unlock();
             }
-            System.out.println("Successfully removed " + val);
             return true;
         }
-        //locks maintained for case 1: r, r.parent, a
-        //a takes place of r
+        //locks maintained for case 1: toDelete, toDelete.parent, successor
+        //successor takes place of toDelete
         else if (i == 1) {
-            if (r == head) {
-                root = a;
-                a.parent = null;
-                r.lock.unlock();
+            if (toDelete == head) {
+                root = successor;
+                successor.parent = null;
+                toDelete.lock.unlock();
             }
             else {
-                if (r.parent.left == r) {
-                    r.parent.left = a;
-                    a.parent = r.parent;
+                if (toDelete.parent.left == toDelete) {
+                    toDelete.parent.left = successor;
+                    successor.parent = toDelete.parent;
                 }
                 else {
-                    r.parent.right = a;
-                    a.parent = r.parent;
+                    toDelete.parent.right = successor;
+                    successor.parent = toDelete.parent;
                 }
-                assert r.parent.left != r && r.parent.right != r;
-//                try {r.parent.lock.unlock(); } catch (Exception e) {
-//                    System.err.println("case: " + i);
-//                    System.err.println("parent: " + r.parent.val);
-//                    System.err.println("r: " + r.val);
-//                    System.exit(1);
-//                }
-                r.parent.lock.unlock();
-                r.lock.unlock();
+                assert toDelete.parent.left != toDelete && toDelete.parent.right != toDelete;
+                toDelete.parent.lock.unlock();
+                toDelete.lock.unlock();
                  //TODO check why illegal monitor exception here
             }
-            a.lock.unlock();
-            System.out.println("Successfully removed " + val);
+            successor.lock.unlock();
             return true;
         }
-        //locks maintained for case 2: r, r.parent (if r not root), a, a.parent
-        //remove reference to a
+        //locks maintained for case 2: toDelete, toDelete.parent (if toDelete not root), successor, successor.parent
+        //remove reference to successor
         else {
-            swap(r,a);
-            if (a.parent.left == a) {
-                System.out.println("in left branch case 2");
-                a.parent.left = a.right;
-                //a.right.parent = a.parent;
+            swap(toDelete,successor);
+            if (successor.parent.left == successor) {
+                successor.parent.left = successor.right;
 
             }
             else {
-                System.out.println("in right branch case 2");
-                a.parent.right = a.right;
-                //a.right.parent = a.parent;
+                successor.parent.right = successor.right;
             }
-            if (a.right != null) {
-                a.right.lock.lock();
-                a.right.parent = a.parent;
-                a.right.lock.unlock();
+            if (successor.right != null) {
+                successor.right.lock.lock();
+                successor.right.parent = successor.parent;
+                successor.right.lock.unlock();
             }
-            if (r != head) {
-                r.parent.lock.unlock();
-//                try {r.parent.lock.unlock();} catch (Exception e) {
-//                    System.err.println("case: " + i);
-//                    System.err.println("parent: " + r.parent.val);
-//                    System.err.println("r: " + r.val);
-//                    System.exit(1);
-//                }
+            if (toDelete != head) {
+                toDelete.parent.lock.unlock();
 
             }
-            r.lock.unlock();
-            a.lock.unlock();
-            if (!flag) { //a.parent is same as r
-                a.parent.lock.unlock();
+            toDelete.lock.unlock();
+            successor.lock.unlock();
+            if (!flag) { //successor.parent is same as toDelete
+                successor.parent.lock.unlock();
             }
-            System.out.println("Successfully removed " + val);
             return true;
         }
 
     }
 
-    public boolean delete1(int val){
-        // find node, r and its parent are locked when returned
-        Node r = find(val);
-        if(r== null){
-            System.out.println("No node of value: " +val);
-            return false; //no node of that value in tree
-        }
-
-        //find node to replace with, r still locked
-
-
-        Node a = null;
-        boolean flag = true;
-        int i = getNumChild(r);
-        System.out.println("\n\ncase: " + i);
-        switch (i) {
-            case 0:
-                a = null;
-                break;
-            case 1:
-                //parent of a is the node to be deleted
-                a = (r.left == null) ? r.right:r.left;
-                a.lock.lock();
-                break;
-            case 2:
-                // a and parent are locked
-                a = fSucc(r.right);
-                flag = (a == r.right);
-                break;
-            default:
-                System.out.println("shouldnt be here");
-                break;
-
-        }
-
-        //if no successor ('root' is a leaf) just delete
-        if(a == null){
-            if (r == root) {
-                r.lock.unlock();
-                root = null;
-            }
-            else {
-                if (r.parent.left == r) {
-                    r.parent.left = null;
-                }
-                else {
-                    r.parent.right = null;
-                }
-                r.parent.lock.unlock();
-            }
-
-            return true;
-        }
-
-        System.out.println("\n"+ a.val +" " +r.val);
-
-        if (i == 1) {
-            if (r == root) {
-                root = a;
-            }
-            else {
-                if (r.parent.left == r) {
-                    r.parent.left = a;
-                    a.parent = r.parent;
-                }
-                else {
-                    r.parent.right = a;
-                    a.parent = r.parent;
-                }
-                r.parent.lock.unlock();
-            }
-            a.lock.unlock();
-            return true;
-        }
-        else {
-            swap(r,a);
-            if (a.parent.left == a) {
-                a.parent.left = a.left;
-            }
-            else {
-                a.parent.right = a.right;
-            }
-            a.parent.lock.unlock();
-            try {
-                r.lock.unlock();
-            }
-            catch (Exception e) {
-                System.out.println("Failed unlock");
-            }
-            return true;
-        }
-
-
-        // if successor swap values and
-//        swap(r,a);
-//        System.out.println("a: "+a.val +" r: " +r.val);
-//        inorderTraversal();
-//
-//        //now need to delete whats in node a, guaranteed to be leaf or single child
-//        if (i == 2) {
-//
-//        }
-//        deleteleaf(a);
-//        r.lock.unlock();
-//        if (!flag) {
-//            a.parent.lock.unlock();
-//        }
-//
-//        return true; //success
-    }
-
-    //delete's a leaf node or a node with only 1 child
-    //assume always either leaf or right node with child
-    private void deleteleaf(Node a){
-        a.parent.lock.lock(); //should always have parent, minus root
-        Node par = a.parent;
-        //check if right child
-        if(par.right.val == a.val){
-            //check if it has children
-            //no children? set parent left to null
-            if(a.right ==null & a.left ==null){
-                par.right = null;
-                par.lock.unlock();
-                return;
-            }
-            //if right child, has children no it'll be a left subtree
-            par.right = a.left;
-            par.lock.unlock();
-            return;
-        }
-        //else its left child
-        else{
-            if(a.left ==null & a.right ==null){
-                par.left = null;
-                par.lock.unlock();
-                return;
-            }
-            //if right child, has children no it'll be a left subtree
-            par.left = a.right;
-            par.lock.unlock();
-            return;
-        }
-    }
-
-    private Node fSucc(Node parent) {
+    private Node findSuccessor(Node parent) {
         Node right = parent;
         right.lock.lock();
         while (right.left != null) {
@@ -391,41 +221,6 @@ public class BST {
         return right;
     }
 
-    //Find method to get inorder predecessor or successor
-    //Root is locked when called
-    private Node findSuccessor(Node parent){
-        if(parent.right == null && parent.left == null)
-            return null;
-        //2 child successor
-        else if(parent.right != null && parent.left != null){
-            Node right = parent.right;
-            //lock right node
-            right.lock.lock();
-            while(right.left != null){
-                //if left not null lock to access
-                right.left.lock.lock();
-                right = right.left;
-                //traverse and unlock parent
-                right.parent.lock.unlock();
-            }
-            //right is still locked
-            return right;
-        }
-        // 1 child successor
-        else{
-            if(parent.left != null){
-                parent.left.lock.lock();
-                return parent.left;
-            }
-            else if(parent.right != null){
-                parent.right.lock.lock();
-                return parent.right;
-            }
-        }
-        System.out.println("It should never get here");
-        return null;
-    }
-
     private int getNumChild(Node parent) {
         if(parent.right == null && parent.left == null)
             return 0;
@@ -436,19 +231,18 @@ public class BST {
     }
 
     //takes 2 nodes and simples swaps their Vals, nothing else
-    private void swap (Node a, Node b){
+    private void swap(Node a, Node b){
         int temp = a.val;
         a.val = b.val;
         b.val = temp;
     }
 
-
-    public Node find(int val){
+    public boolean contains(int key){
         this.root.lock.lock();
-        return findHelper(root,val);
+        return containsHelper(this.root,key);
     }
 
-    private Node newFind(Node parent, int val) {
+    private Node find(Node parent, int val) {
         //parent already locked and value checked
         boolean leftNull = parent.left == null;
         boolean rightNull = parent.right == null;
@@ -461,7 +255,7 @@ public class BST {
                 else {
                     parent.left.lock.lock();
                     parent.lock.unlock();
-                    return newFind(parent.left, val);
+                    return find(parent.left, val);
                 }
             }
             else {
@@ -478,7 +272,7 @@ public class BST {
                 else {
                     parent.right.lock.lock();
                     parent.lock.unlock();
-                    return newFind(parent.right, val);
+                    return find(parent.right, val);
                 }
             }
             else {
@@ -488,13 +282,11 @@ public class BST {
         }
     }
 
-    private Node findHelper(Node parent, int val){
+    private boolean containsHelper(Node parent, int val){
         //if node found return it
         if (parent.val == val){
-            if (parent.parent != null) {
-                parent.parent.lock.lock(); //TODO: Might have to change and find another way to relock the parent
-            }
-            return parent;
+            parent.lock.unlock();
+            return true;
         }
         else{
             //if not found either go left or go right, IF Node exists
@@ -502,23 +294,23 @@ public class BST {
                 if(parent.left != null){
                     parent.left.lock.lock();
                     parent.lock.unlock();
-                    return findHelper(parent.left, val);
+                    return containsHelper(parent.left, val);
                 }
                 else{
                     //node doesn't exist return null
                     parent.lock.unlock();
-                    return null;
+                    return false;
                 }
             }
             else{
                 if(parent.right != null){
                     parent.right.lock.lock();
                     parent.lock.unlock();
-                    return findHelper(parent.right, val);
+                    return containsHelper(parent.right, val);
                 }
                 else {
                     parent.lock.unlock();
-                    return null;
+                    return false;
                 }
             }
         }
