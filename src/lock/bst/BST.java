@@ -84,7 +84,155 @@ public class BST {
         }
     }
 
-    public boolean delete(int val){
+    public boolean delete(int val) {
+        treelock.lock();
+        Node head = root;
+        if (head == null) {
+            treelock.unlock();
+            return false;
+        }
+        head.lock.lock();
+        treelock.unlock();
+        Node r = null;
+        if (head.val == val) {
+            r = head;
+        }
+        else {
+            r = newFind(head, val);
+        }
+
+        if (r == null) {
+            // all nodes have been unlocked
+            //System.out.println("No node of value: " +val);
+            return false; //no node of that value in tree
+        }
+        // r and r.parent locked at this point
+        // now need to find node to replace r
+
+        Node a = null;
+        boolean flag = true;
+        int i = getNumChild(r);
+        //System.out.println("\n\ncase: " + i);
+        switch (i) {
+            case 0:
+                a = null;
+                break;
+            case 1:
+                //parent of a is the node to be deleted
+                a = (r.left == null) ? r.right:r.left;
+                a.lock.lock();
+                break;
+            case 2:
+                // a and parent are locked
+                a = fSucc(r.right);
+                flag = (a == r.right);
+                break;
+            default:
+                System.out.println("shouldnt be here");
+                break;
+
+        }
+        //locks maintained for a == null -> r, r.parent (if r != root)
+        //r is a leaf, if its root set to null else remove reference from parent
+        if(i == 0){
+            if (r == head) {
+                r.lock.unlock();
+                root = null;
+            }
+            else {
+                if (r.parent.left == r) {
+                    r.parent.left = null;
+                }
+                else {
+                    r.parent.right = null;
+                }
+                assert r.parent.left != r && r.parent.right != r;
+//                try {r.parent.lock.unlock(); } catch (Exception e) {
+//                    System.err.println("case: " + i);
+//                    System.err.println("parent: " + r.parent.val);
+//                    System.err.println("r: " + r.val);
+//                    System.exit(1);
+//                }//TODO illegal state monitor exception here
+                r.parent.lock.unlock();
+                r.lock.unlock();
+            }
+            System.out.println("Successfully removed " + val);
+            return true;
+        }
+        //locks maintained for case 1: r, r.parent, a
+        //a takes place of r
+        else if (i == 1) {
+            if (r == head) {
+                root = a;
+                a.parent = null;
+                r.lock.unlock();
+            }
+            else {
+                if (r.parent.left == r) {
+                    r.parent.left = a;
+                    a.parent = r.parent;
+                }
+                else {
+                    r.parent.right = a;
+                    a.parent = r.parent;
+                }
+                assert r.parent.left != r && r.parent.right != r;
+//                try {r.parent.lock.unlock(); } catch (Exception e) {
+//                    System.err.println("case: " + i);
+//                    System.err.println("parent: " + r.parent.val);
+//                    System.err.println("r: " + r.val);
+//                    System.exit(1);
+//                }
+                r.parent.lock.unlock();
+                r.lock.unlock();
+                 //TODO check why illegal monitor exception here
+            }
+            a.lock.unlock();
+            System.out.println("Successfully removed " + val);
+            return true;
+        }
+        //locks maintained for case 2: r, r.parent (if r not root), a, a.parent
+        //remove reference to a
+        else {
+            swap(r,a);
+            if (a.parent.left == a) {
+                System.out.println("in left branch case 2");
+                a.parent.left = a.right;
+                //a.right.parent = a.parent;
+
+            }
+            else {
+                System.out.println("in right branch case 2");
+                a.parent.right = a.right;
+                //a.right.parent = a.parent;
+            }
+            if (a.right != null) {
+                a.right.lock.lock();
+                a.right.parent = a.parent;
+                a.right.lock.unlock();
+            }
+            if (r != head) {
+                r.parent.lock.unlock();
+//                try {r.parent.lock.unlock();} catch (Exception e) {
+//                    System.err.println("case: " + i);
+//                    System.err.println("parent: " + r.parent.val);
+//                    System.err.println("r: " + r.val);
+//                    System.exit(1);
+//                }
+
+            }
+            r.lock.unlock();
+            a.lock.unlock();
+            if (!flag) { //a.parent is same as r
+                a.parent.lock.unlock();
+            }
+            System.out.println("Successfully removed " + val);
+            return true;
+        }
+
+    }
+
+    public boolean delete1(int val){
         // find node, r and its parent are locked when returned
         Node r = find(val);
         if(r== null){
@@ -167,7 +315,12 @@ public class BST {
                 a.parent.right = a.right;
             }
             a.parent.lock.unlock();
-            r.lock.unlock();
+            try {
+                r.lock.unlock();
+            }
+            catch (Exception e) {
+                System.out.println("Failed unlock");
+            }
             return true;
         }
 
@@ -295,6 +448,46 @@ public class BST {
         return findHelper(root,val);
     }
 
+    private Node newFind(Node parent, int val) {
+        //parent already locked and value checked
+        boolean leftNull = parent.left == null;
+        boolean rightNull = parent.right == null;
+        if (val < parent.val) {
+            if (!leftNull) {
+                if (parent.left.val == val) {
+                    parent.left.lock.lock();
+                    return parent.left;
+                }
+                else {
+                    parent.left.lock.lock();
+                    parent.lock.unlock();
+                    return newFind(parent.left, val);
+                }
+            }
+            else {
+                parent.lock.unlock();
+                return null;
+            }
+        }
+        else {
+            if (!rightNull) {
+                if (parent.right.val == val) {
+                    parent.right.lock.lock();
+                    return parent.right;
+                }
+                else {
+                    parent.right.lock.lock();
+                    parent.lock.unlock();
+                    return newFind(parent.right, val);
+                }
+            }
+            else {
+                parent.lock.unlock();
+                return null;
+            }
+        }
+    }
+
     private Node findHelper(Node parent, int val){
         //if node found return it
         if (parent.val == val){
@@ -339,6 +532,7 @@ public class BST {
             System.out.print(root.val+ " ");
             iot(root.right);
         }
+        System.out.println("\n");
     }
 
     private void iot(Node head){

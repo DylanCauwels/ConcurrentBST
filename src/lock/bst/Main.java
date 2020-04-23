@@ -9,12 +9,13 @@ public class Main {
 //        t.add(6);t.add(15);t.add(18);
 //        t.inorderTraversal();
 //
-//        t.delete(5);t.delete(18);
+//        t.delete(5);
+//        t.inorderTraversal();
+//        t.delete(18);
 //        t.inorderTraversal();
 
         BST s = new BST(8);
         s.add(2);s.add(7);s.add(6);s.add(5);s.add(4);
-        //
         s.inorderTraversal();
         s.delete(6);
         s.inorderTraversal();
