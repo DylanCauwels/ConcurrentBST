@@ -131,13 +131,15 @@ public class RedBlack {
                     y.color = BLACK;
                     x.grandparent().color = RED;
                     x = x.parent.parent;
+                // parent's sibling is not RED and requires a rebalance
                 } else {
-                    // CASE 2
+                    // CASE 2 -- new node is right child, rotate the subtree under x's parents left to compensate
                     if (x == x.parent.right) {
+                        // done to allow CASE 3 code to run properly as not setting x to x.parent would bump the ancestry up by 1
                         x = x.parent;
                         leftRotate(x);
                     }
-                    // CASE 3
+                    // CASE 3 -- now rotate the grandparent tree to rebalance
                     x.parent.color = BLACK;
                     x.grandparent().color = RED;
                     rightRotate(x.grandparent());
@@ -171,6 +173,7 @@ public class RedBlack {
 
     }
 
+    // rebalance the tree under x with +1 to left side and -1 to right side (counter-clockwise rotation)
     private void leftRotate(Node x) {
         Node y = x.right;
         // connecting y.left and x.right
@@ -192,6 +195,7 @@ public class RedBlack {
         x.parent = y;
     }
 
+    // rebalance the tree under x with +1 to right side and -1 to left side (clockwise rotation)
     private void rightRotate(Node x) {
         Node y = x.left;
         // connecting y.right and x.left

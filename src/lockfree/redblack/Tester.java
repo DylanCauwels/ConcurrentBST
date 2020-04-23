@@ -1,11 +1,8 @@
 package lockfree.redblack;
 
-import lockfree.bst.BST;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.concurrent.BlockingDeque;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -14,25 +11,75 @@ import static org.junit.Assert.assertTrue;
 public class Tester {
 
     @Test
-    public void test() {
-        assertEquals(true, true);
-    }
-
-    @Test
-    public void sequentialInsertAll() {
+    public void sequentialRightRotate() {
         RedBlack tree = new RedBlack();
-        int numNodes = 10;
+        int numNodes = 1000;
         ArrayList<Integer> missedValues = new ArrayList<>();
 
-        for (int i = numNodes; i > 0; i--) {
+        // insert the nodes in decreasing order to force right rotations
+        for (int i = numNodes-1; i >= 0; i--) {
             tree.insert(i);
         }
-        for (int i = numNodes; i > 0; i--) {
+        for (int i = numNodes-1; i >= 0; i--) {
             if (!tree.contains(i))
                 missedValues.add(i);
         }
 
         assertProperties(tree);
+        assertTrue(missedValues.isEmpty());
+    }
+
+    @Test
+    public void sequentialLeftRotate() {
+        RedBlack tree = new RedBlack();
+        int numNodes = 1000;
+        ArrayList<Integer> missedValues = new ArrayList<>();
+
+        // inserting the nodes in increasing order to force left rotations
+        for (int i = 0; i < numNodes; i++) {
+            tree.insert(i);
+        }
+        for (int i = 0; i < numNodes; i++) {
+            if (!tree.contains(i))
+                missedValues.add(i);
+        }
+
+        assertProperties(tree);
+        assertTrue(missedValues.isEmpty());
+    }
+
+    @Test
+    public void sequentialInsertAll() {
+        RedBlack tree = new RedBlack();
+        int numNodes = 1000;
+        ArrayList<Integer> missedValues = new ArrayList<>();
+
+        for (int i = 0; i < numNodes; i++) {
+            tree.insert(i);
+        }
+        for (int i = 0; i < numNodes; i++) {
+            if (!tree.contains(i))
+                missedValues.add(i);
+        }
+
+        assertProperties(tree);
+        assertTrue(missedValues.isEmpty());
+    }
+
+    @Test
+    public void strictSequentialInsertAll() {
+        RedBlack tree = new RedBlack();
+        int numNodes = 1000;
+        ArrayList<Integer> missedValues = new ArrayList<>();
+
+        for (int i = 0; i < numNodes; i++) {
+            tree.insert(i);
+            assertProperties(tree);
+        }
+        for (int i = 0; i < numNodes; i++) {
+            if (!tree.contains(i))
+                missedValues.add(i);
+        }
         assertTrue(missedValues.isEmpty());
     }
 
@@ -90,7 +137,7 @@ public class Tester {
 
     class BFSObject {
         public Node node;
-        public int numBlacks = 0;
+        public int numBlacks;
 
         public BFSObject(Node x, int total) {
             node = x;
