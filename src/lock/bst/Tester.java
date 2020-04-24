@@ -117,7 +117,7 @@ public class Tester {
         // implement run method for thread
         public void run() {
             Random r = new Random();
-            int key = r.nextInt(15);
+            int key = r.nextInt(400);
 
             int i = (int)Thread.currentThread().getId();
             if (i % 3 == 0) {
@@ -184,7 +184,7 @@ public class Tester {
     @Test
     public void containsTest() throws InterruptedException {
         BST bst = new BST();
-        int numNodes = 45;
+        int numNodes = 1000;
         Thread[] threads = new Thread[numNodes];
         for (int i = 0; i < numNodes; ++i) {
             threads[i] = new Thread(new ThreadBSTSingleAddRemoveContains(bst));
