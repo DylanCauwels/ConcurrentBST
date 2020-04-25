@@ -4,9 +4,10 @@ import lock.bst.BST;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-public class RB extends BST {
+public class RBT extends BST {
     ReentrantLock treelock = new ReentrantLock();
     Node root;
+    Node nil = new Node();
 
     public enum Color {
         red,
@@ -28,6 +29,15 @@ public class RB extends BST {
             lock = new ReentrantLock();
             left = null;
             right = null;
+            parent = nil;
+            color= Color.red;
+            child = null;
+        }
+
+        public Node() {
+            lock = new ReentrantLock();
+            left = null;
+            right = null;
             parent = null;
             color= Color.red;
             child = null;
@@ -35,20 +45,21 @@ public class RB extends BST {
     }
 
 
-    public RB(int rootval){
+    public RBT(int rootval){
         this.root = new Node(rootval);
     }
 
-    public RB(){
+    public RBT(){
         this.root = null;
     }
 
     @Override
     public boolean insert(int key) {
-
+        treelock.lock();
         if(root == null){
             root = new Node(key);
             root.color = Color.black; //make root black, no need to recolor
+            treelock.unlock();
             return true; // insert one red node
         }
         //add new Node
@@ -56,6 +67,8 @@ public class RB extends BST {
         n.lock.lock();
         treelock.unlock();
         Node nu = new Node(key);
+        //at end of insertHelper: nu, nu.parent, nu.gp, and nu.uncle need to be locked
+        //so that recolor can work
         if(insertHelper(nu, n)){
             recolor(nu);
         }
@@ -73,7 +86,7 @@ public class RB extends BST {
             if(parent.left == null){
                 parent.left = key;
                 key.child = true; //left child
-                parent.left.parent = parent;
+                parent.left.parent = parent; //TODO : isnt this the same as key.parent?
                 parent.lock.unlock();
                 return true; //success
             }
@@ -88,7 +101,7 @@ public class RB extends BST {
             if(parent.right == null){
                 key.child = false; //right child
                 parent.right = key;
-                parent.right.parent = parent;
+                parent.right.parent = parent; //TODO : isnt this the same as key.parent?
                 parent.lock.unlock();
                 return true; //success
             }
@@ -109,7 +122,8 @@ public class RB extends BST {
         while(c!=this.root && c.parent.color == Color.red){ //true == red
             parent = c.parent;
             gp = parent.parent;
-            if(parent ==gp.left){ //parent is left child of grandparent
+
+            if(parent == gp.left){ //parent is left child of grandparent
                 unc = gp.right;
                 if(unc != null &&  unc.color == Color.red){ //uncle is also red case 1
                     parent.color = Color.black; //then color uncle, parent black
@@ -121,8 +135,8 @@ public class RB extends BST {
                     c = parent;
                     leftRotate(c);
                 }
-                parent.color =Color.black;
-                gp.color =Color.red;
+                parent.color = Color.black;
+                gp.color = Color.red;
                 rightRotate(gp);
             }
             else{                  //parent is right child of grandparent
@@ -137,8 +151,8 @@ public class RB extends BST {
                     c = parent;
                     rightRotate(c);
                 }
-                parent.color =Color.black;
-                gp.color =Color.red;
+                parent.color = Color.black;
+                gp.color = Color.red;
                 leftRotate(gp);
             }
         }
@@ -186,5 +200,21 @@ public class RB extends BST {
         n.parent = y;
     }
 
+    public void inorderTraversal (){
+        System.out.println("\n");
+        if(root != null){
+            iot(root.left);
+            System.out.print(root.val+ " ");
+            iot(root.right);
+        }
+        System.out.println("\n");
+    }
 
+    private void iot(Node head){
+        if(head != null){
+            iot(head.left);
+            System.out.print(head.val+ " ");
+            iot(head.right);
+        }
+    }
 }
