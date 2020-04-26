@@ -5,7 +5,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 // This lock.BST assumes NO DUPLICATE VALUES, if there are need to edit class to
 // insert count variable, better for AVL trees, and edit functions
-public class BST {
+public class BST implements util.TreeInterface {
 
     ReentrantLock treelock = new ReentrantLock();
     Node root;

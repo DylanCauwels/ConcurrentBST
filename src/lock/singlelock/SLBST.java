@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SLBST {
+public class SLBST implements util.TreeInterface {
     Lock treelock;
     Node root;
 
