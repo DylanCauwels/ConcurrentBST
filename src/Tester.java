@@ -47,6 +47,42 @@ public class Tester {
         }
     }
 
+    class ThreadBSTSingleAddRemoveContains implements Runnable {
+        private lock.bst.BST hohLock;
+        private lockfree.bst.BST lFree;
+        private SLBST sLock;
+
+        public ThreadBSTSingleAddRemoveContains(BST hohLock, lockfree.bst.BST lFree, SLBST sLock) {
+            this.hohLock = hohLock;
+            this.lFree = lFree;
+            this.sLock = sLock;
+        }
+
+
+        @Override
+        public void run() {
+            Random r = new Random();
+            int key = r.nextInt(200);
+
+            int i = (int)Thread.currentThread().getId();
+            if (i % 3 == 0) {
+                hohLock.insert(key);
+                lFree.insert(key);
+                sLock.insert(key);
+            }
+            else if (i % 3 == 1) {
+                hohLock.contains(key);
+                lFree.contains(key);
+                sLock.contains(key);
+            }
+            else {
+                hohLock.delete(key);
+                lFree.delete(key);
+                sLock.delete(key);
+            }
+        }
+    }
+
     class Inserter implements Runnable{
         private TreeInterface tree;
         private int inserts;
@@ -110,7 +146,13 @@ public class Tester {
     // ACTUAL TESTS //
 
     @Test
-    public void correctness() throws InterruptedException {
+    public void runAllCorrectness() throws InterruptedException {
+        correctnessInsertDelete();
+        correctnessInsertDeleteContains();
+    }
+
+    @Test
+    public void correctnessInsertDelete() throws InterruptedException {
         lock.bst.BST hohLock = new lock.bst.BST();
         lockfree.bst.BST lFree =  new lockfree.bst.BST();
         SLBST sLock = new SLBST();
@@ -118,6 +160,45 @@ public class Tester {
         Thread[] threads = new Thread[numNodes];
         for (int i = 0; i < numNodes; i++) {
             threads[i] = new Thread(new ThreadBSTSingleAddRemove(hohLock, lFree, sLock));
+            threads[i].start();
+        }
+
+        for (int i = 0; i<numNodes; i++) {
+            threads[i].join();
+        }
+
+        ArrayList<Integer> hohVals = hohLock.inorderTraversalTester();
+
+        ArrayList<Integer> lfreeVals = new ArrayList<>();
+        String vals = lFree.toString();
+        String[] s = vals.trim().split("\n");
+        ArrayList<String> stringVals = new ArrayList<>(Arrays.asList(s));
+        stringVals.forEach(i -> lfreeVals.add(Integer.parseInt(i)));
+
+        ArrayList<Integer> sLockVals = sLock.inorderTraversalTester();
+
+        incTest(hohVals);
+        incTest(lfreeVals);
+        incTest(sLockVals);
+        Assert.assertArrayEquals("Comparing hand over hand locking and single lock ", sLockVals.toArray(), hohVals.toArray());
+        Assert.assertArrayEquals("Comparing lockfree and single lock ", sLockVals.toArray(), lfreeVals.toArray());
+        System.out.print("Hand over Hand: ");
+        printArrays(hohVals);
+        System.out.print("Lock Free:      ");
+        printArrays(lfreeVals);
+        System.out.print("Single Lock:    ");
+        printArrays(sLockVals);
+    }
+
+    @Test
+    public void correctnessInsertDeleteContains() throws InterruptedException {
+        lock.bst.BST hohLock = new lock.bst.BST();
+        lockfree.bst.BST lFree =  new lockfree.bst.BST();
+        SLBST sLock = new SLBST();
+        int numNodes = 500;
+        Thread[] threads = new Thread[numNodes];
+        for (int i = 0; i < numNodes; i++) {
+            threads[i] = new Thread(new ThreadBSTSingleAddRemoveContains(hohLock, lFree, sLock));
             threads[i].start();
         }
 

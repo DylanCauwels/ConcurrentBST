@@ -209,6 +209,10 @@ public class SLBST implements util.TreeInterface {
 
     public boolean contains(int key){
         treelock.lock();
+        if (root == null) {
+            treelock.unlock();
+            return false;
+        }
         return containsHelper(this.root,key);
     }
 
