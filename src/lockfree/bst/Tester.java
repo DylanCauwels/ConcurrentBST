@@ -113,7 +113,7 @@ public class Tester {
     @Test
     public void concurrentDeleteAll() throws InterruptedException {
         BST tree = new BST();
-        int numNodes = 100000;
+        int numNodes = 10000;
         Remover rem = new Remover(tree);
         Thread[] threads = new Thread[numNodes];
         ArrayList<Integer> missedValues = new ArrayList<>();
