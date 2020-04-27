@@ -10,6 +10,14 @@ public class BST implements util.TreeInterface {
     private ReentrantLock treelock = new ReentrantLock();
     private Node root;
 
+    /**
+     * Node class for tree
+     * expects a value for constructor
+     * class variables:
+     * left, right : references for left, right children
+     * lock: lock for concurrency, intially unlocked
+     * parent: reference for parent
+     */
     class Node{
         ReentrantLock lock;
         Node left;
@@ -26,18 +34,27 @@ public class BST implements util.TreeInterface {
         }
     }
 
+    /**
+     * null constructor, constructs a BST with no root
+     */
     public BST(){
         this.root = null;
     }
 
+    /**
+     * Function to insert value into tree
+     * @param key : integer value to be inserted
+     * @return :true - if insert is successful (no duplicates)
+     *          false- if unsuccessful
+     */
     public boolean insert(int key){
-        treelock.lock();
-        if(this.root == null){
+        treelock.lock();                  //lock tree first to check if tree is null
+        if(this.root == null){            //yes? then add root, unlock and return
             this.root = new Node(key);
             treelock.unlock();
             return true;
         }
-        else{
+        else{                             //else, unlock tree and lock root node to search where to add
             Node n = this.root;
             n.lock.lock();
             treelock.unlock();
@@ -45,14 +62,19 @@ public class BST implements util.TreeInterface {
         }
     }
 
+    /**
+     * Helper function to insert into BST
+     * @param key: integer value to be added
+     * @param parent: Current node traversing
+     * @return : true- insert is successful
+     */
     private boolean insertHelper(int key, Node parent){
         if(parent.val == key){
             parent.lock.unlock();
-            return false; //can't insert, key already exists
+            return false;                               //can't insert, key already exists
         }
-        else if( key< parent.val){
-            //empty so can insert node
-            if(parent.left == null){
+        else if( key< parent.val){                      //if key<parent.val, go left
+            if(parent.left == null){ //child null, so can insert node
                 parent.left = new Node(key);
                 parent.left.parent = parent;
                 parent.lock.unlock();
@@ -60,12 +82,12 @@ public class BST implements util.TreeInterface {
             }
             else{ //else keep traversing
                 Node left = parent.left;
-                left.lock.lock();
+                left.lock.lock();             //hand-over-hand locking from parent to child node for traversal
                 parent.lock.unlock();
                 return insertHelper(key, left);
             }
         }
-        else{
+        else{                                           //else, go right
             if(parent.right == null){
                 parent.right = new Node(key);
                 parent.right.parent = parent;
@@ -81,6 +103,11 @@ public class BST implements util.TreeInterface {
         }
     }
 
+    /**
+     * Delete function to remove node from BST
+     * @param key : integer value to be added to BST
+     * @return : true, if success (node exists and is removed)
+     */
     public boolean delete(int key) {
         treelock.lock();
         Node head = root;
@@ -203,6 +230,11 @@ public class BST implements util.TreeInterface {
 
     }
 
+    /**
+     * Function to find either inorder Sucessor or predecessor
+     * @param parent : Node which you want to find successor or predecessor for
+     * @return Node: returns Node reference of successor
+     */
     private Node findSuccessor(Node parent) {
         Node right = parent;
         right.lock.lock();
@@ -218,6 +250,11 @@ public class BST implements util.TreeInterface {
         return right;
     }
 
+    /**
+     * function to count number of children for a node
+     * @param parent : node that you want to find number of children for
+     * @return int value of children
+     */
     private int getNumChild(Node parent) {
         if(parent.right == null && parent.left == null)
             return 0;
@@ -228,12 +265,23 @@ public class BST implements util.TreeInterface {
     }
 
     //takes 2 nodes and simples swaps their Vals, nothing else
+
+    /**
+     * Function that takes 2 nodes and simply swaps their values, nothing else
+     * @param a : node 1
+     * @param b : node 2
+     */
     private void swap(Node a, Node b){
         int temp = a.val;
         a.val = b.val;
         b.val = temp;
     }
 
+    /**
+     * Same as insert()
+     * @param key
+     * @return
+     */
     public boolean contains(int key){
         treelock.lock();
         if (root == null) {
@@ -245,6 +293,12 @@ public class BST implements util.TreeInterface {
         return containsHelper(this.root,key);
     }
 
+    /**
+     * function to find if a Node with desired value exists in tree
+     * @param parent : current node in traversal
+     * @param val : desired value to find
+     * @return Node: returns Node reference if it exists, or null if not
+     */
     private Node find(Node parent, int val) {
         //parent already locked and value checked
         boolean leftNull = parent.left == null;
@@ -285,6 +339,12 @@ public class BST implements util.TreeInterface {
         }
     }
 
+    /**
+     * Same as insert helper()
+     * @param parent
+     * @param val
+     * @return
+     */
     private boolean containsHelper(Node parent, int val){
         //if node found return it
         if (parent.val == val){
@@ -319,7 +379,9 @@ public class BST implements util.TreeInterface {
         }
     }
 
-    //prints inorder traversal
+    /**
+     * function to print in-order traversal of tree
+     */
     public void inorderTraversal (){
         System.out.println("\n");
         if(root != null){
@@ -330,6 +392,10 @@ public class BST implements util.TreeInterface {
         System.out.println("\n");
     }
 
+    /**
+     * Helper function for inorderTraversal()
+     * @param head
+     */
     private void iot(Node head){
         if(head != null){
             iot(head.left);
@@ -338,6 +404,10 @@ public class BST implements util.TreeInterface {
         }
     }
 
+    /**
+     * Same as inOrderTraversal()
+     * @return
+     */
     public ArrayList<Integer> inorderTraversalTester (){
         ArrayList<Integer> output = new ArrayList<>();
         if(root != null){
@@ -348,6 +418,10 @@ public class BST implements util.TreeInterface {
         return output;
     }
 
+    /**
+     * Same as iot()
+     * @return
+     */
     private void iotTester(Node head, ArrayList<Integer> output){
         if(head != null){
             iotTester(head.left, output);
