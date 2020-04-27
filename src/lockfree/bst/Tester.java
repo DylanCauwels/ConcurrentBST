@@ -45,10 +45,12 @@ public class Tester {
         for (int i = 0; i < numNodes; i++) {
             if (!tree.contains(i)) {
                 missedValues.add(i);
-                System.out.println("missed value on concurrent insert all: " + i);
             }
         }
 
+        if (!missedValues.isEmpty()) {
+            System.out.println("Concurrent Insert All Missed: " + missedValues.size() + " elements");
+        }
         assertTrue(missedValues.isEmpty());
     }
 
@@ -111,7 +113,7 @@ public class Tester {
     @Test
     public void concurrentDeleteAll() throws InterruptedException {
         BST tree = new BST();
-        int numNodes = 10000;
+        int numNodes = 100000;
         Remover rem = new Remover(tree);
         Thread[] threads = new Thread[numNodes];
         ArrayList<Integer> missedValues = new ArrayList<>();

@@ -1,7 +1,5 @@
 package lockfree.bst;
 
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicStampedReference;
 
 public class BST implements util.TreeInterface {
@@ -54,10 +52,14 @@ public class BST implements util.TreeInterface {
                 }
                 newInternal = new Internal(Integer.max(key, l.key), left, right, null, CLEAN);
                 op = new InsertInfo(l, p, newInternal);
-                if (pupdate.compareAndSet(null, op, CLEAN, IFLAG)) {
-                    if (helpInsert(op)) {
-                        return true;
+                if ((op.parent.left.get() == op.leaf || op.parent.right.get() == op.leaf) && pupdate.compareAndSet(null, op, CLEAN, IFLAG)) {
+                    // ensure leaf nodes haven't been modified between the search and the CAS
+                    if (!(op.parent.left.get() == op.leaf || op.parent.right.get() == op.leaf)) {
+                        pupdate.compareAndSet(op, null, IFLAG, CLEAN);
+                        continue;
                     }
+                    helpInsert(op);
+                    return true;
                 } else {
                     help(pupdate);
                 }
@@ -130,10 +132,9 @@ public class BST implements util.TreeInterface {
         return displayNodes;
     }
 
-
     /**
      * PRIVATE HELPERS
-     **/
+     */
 
     class SearchReturn {
         public Internal parent;
@@ -172,16 +173,15 @@ public class BST implements util.TreeInterface {
     }
 
     private void help(AtomicStampedReference u) {
-        if (u != null) {
-            if (u.getStamp() == IFLAG) helpInsert((InsertInfo) u.getReference());
-            else if (u.getStamp() == MARK) helpMarked((DeleteInfo) u.getReference());
-            else if (u.getStamp() == DFLAG) helpDelete((DeleteInfo) u.getReference());
-        }
+        if (u.getStamp() == IFLAG) helpInsert((InsertInfo) u.getReference());
+        else if (u.getStamp() == MARK) helpMarked((DeleteInfo) u.getReference());
+        else if (u.getStamp() == DFLAG) helpDelete((DeleteInfo) u.getReference());
     }
 
-    private boolean helpInsert(InsertInfo op) {
-        if (op == null) return false;
-        return CASChild(op.parent, op.leaf, op.newInternal) && op.parent.update.compareAndSet(op, null, IFLAG, CLEAN);
+    private void helpInsert(InsertInfo op) {
+        if (op == null) return;
+        CASChild(op.parent, op.leaf, op.newInternal);
+        op.parent.update.compareAndSet(op, null, IFLAG, CLEAN);
     }
 
     private boolean helpDelete(DeleteInfo op) {
@@ -190,7 +190,7 @@ public class BST implements util.TreeInterface {
             return true;
         } else {
             help(op.parent.update);
-            op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN);
+            op.gParent.update.compareAndSet(op, null, DFLAG, CLEAN);
             return false;
         }
 
@@ -205,15 +205,13 @@ public class BST implements util.TreeInterface {
         op.gParent.update.compareAndSet(op.gParent.update.getReference(), null, DFLAG, CLEAN);
     }
 
-    private boolean CASChild(Internal parent, Node old, Node newNode) {
+    private void CASChild(Internal parent, Node old, Node newNode) {
         if (parent != null && newNode != null) {
             if (newNode.key < parent.key) {
-                return parent.left.compareAndSet(old, newNode);
+                parent.left.compareAndSet(old, newNode);
             } else {
-                return parent.right.compareAndSet(old, newNode);
+                parent.right.compareAndSet(old, newNode);
             }
         }
-        return false;
     }
-
 }

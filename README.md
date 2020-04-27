@@ -17,7 +17,6 @@ Allow insertion, deletion, and searching in a constrained _O(h)_ time where _h_ 
 * the left and right subtrees are also binary search trees
 
 ### Lockbased <span style="font-size:small;">Fine-Grained</span>
-
 ![Class Diagram](./references/LockbasedBST.png)
 
 ### Lockfree
@@ -70,5 +69,5 @@ _still in progress_
 <!-- See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project. -->
 
 ### Acknowledgments
-
-* Dr. Vijay Garg
+* [**Ellen, Faith & Fatourou, Panagiota & Ruppert, Eric & Breugel, Franck**. (2010). Non-blocking Binary Search Trees. Proceedings of the Annual ACM Symposium on Principles of Distributed Computing. 131-140. 10.1145/1835698.1835736.](https://www.researchgate.net/publication/221344000_Non-blocking_Binary_Search_Trees)
+* **Dr. Vijay Garg** -- _Professor_
