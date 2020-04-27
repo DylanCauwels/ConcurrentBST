@@ -62,7 +62,7 @@ public class Tester {
         @Override
         public void run() {
             Random r = new Random();
-            int key = r.nextInt(200);
+            int key = r.nextInt(500);
 
             int i = (int)Thread.currentThread().getId();
             if (i % 3 == 0) {
@@ -147,8 +147,19 @@ public class Tester {
 
     @Test
     public void runAllCorrectness() throws InterruptedException {
-        correctnessInsertDelete();
-        correctnessInsertDeleteContains();
+        double iterations = 20;
+        double count = 0;
+        for (int i = 0; i < iterations; i++) {
+            try {
+                System.out.println(i+1);
+                correctnessInsertDelete();
+                correctnessInsertDeleteContains();
+            }
+            catch (Exception e) {
+                count++;
+            }
+        }
+        System.out.println("Success percentage: " + (iterations-count)*100/iterations);
     }
 
     @Test
@@ -195,7 +206,7 @@ public class Tester {
         lock.bst.BST hohLock = new lock.bst.BST();
         lockfree.bst.BST lFree =  new lockfree.bst.BST();
         SLBST sLock = new SLBST();
-        int numNodes = 500;
+        int numNodes = 5000;
         Thread[] threads = new Thread[numNodes];
         for (int i = 0; i < numNodes; i++) {
             threads[i] = new Thread(new ThreadBSTSingleAddRemoveContains(hohLock, lFree, sLock));

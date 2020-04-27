@@ -61,7 +61,7 @@ public class Tester {
         // implement run method for thread
         public void run() {
             Random r = new Random();
-            int key = r.nextInt(400);
+            int key = r.nextInt(50);
 
             int i = (int)Thread.currentThread().getId();
 //            if (i % 2 == 0) {
@@ -220,7 +220,25 @@ public class Tester {
     }
 
     @Test
+    public void runAllCorrectness() {
+        double iterations = 100;
+        double count = 0;
+        for (int i = 0; i < iterations; i++) {
+            try {
+                System.out.println(i+1);
+                correctnessInsertDelete();
+                correctnessInsertDeleteContains();
+            }
+            catch (Exception e) {
+                count++;
+            }
+        }
+        System.out.println("Success percentage: " + (iterations-count)*100/iterations);
+    }
+
+    @Test
     public void correctnessInsertDelete() throws InterruptedException {
+        boolean print = false;
         lock.bst.BST hohLock = new lock.bst.BST();
         SLBST sLock = new SLBST();
         int numNodes = 500;
@@ -242,14 +260,18 @@ public class Tester {
         incTest(hohVals);
         incTest(sLockVals);
         Assert.assertArrayEquals("Comparing hand over hand locking and single lock ", sLockVals.toArray(), hohVals.toArray());
-        System.out.print("Hand over Hand: ");
-        printArrays(hohVals);
-        System.out.print("Single Lock:    ");
-        printArrays(sLockVals);
+        if (print) {
+            System.out.print("Hand over Hand: ");
+            printArrays(hohVals);
+            System.out.print("Single Lock:    ");
+            printArrays(sLockVals);
+        }
+
     }
 
     @Test
     public void correctnessInsertDeleteContains() throws InterruptedException{
+        boolean print = false;
         lock.bst.BST hohLock = new lock.bst.BST();
         SLBST sLock = new SLBST();
         int numNodes = 5000;
@@ -271,10 +293,12 @@ public class Tester {
         incTest(hohVals);
         incTest(sLockVals);
         Assert.assertArrayEquals("Comparing hand over hand locking and single lock ", sLockVals.toArray(), hohVals.toArray());
-        System.out.print("Hand over Hand: ");
-        printArrays(hohVals);
-        System.out.print("Single Lock:    ");
-        printArrays(sLockVals);
+        if (print) {
+            System.out.print("Hand over Hand: ");
+            printArrays(hohVals);
+            System.out.print("Single Lock:    ");
+            printArrays(sLockVals);
+        }
     }
 
     public void incTest(ArrayList<Integer> list) {
