@@ -6,8 +6,8 @@ import java.util.concurrent.locks.ReentrantLock;
 // insert count variable, better for AVL trees, and edit functions
 public class BST {
 
-    ReentrantLock treelock = new ReentrantLock();
-    Node root;
+    private ReentrantLock treelock = new ReentrantLock();
+    private Node root;
 
     class Node{
         ReentrantLock lock;
@@ -16,17 +16,13 @@ public class BST {
         int val;
         Node parent;
 
-        public Node (int _val){
+        Node(int _val){
             val = _val;
             lock = new ReentrantLock();
             left = null;
             right = null;
             parent = null;
         }
-    }
-
-    public BST(int rootval){
-        this.root = new Node(rootval);
     }
 
     public BST(){

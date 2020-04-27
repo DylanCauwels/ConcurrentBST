@@ -22,13 +22,29 @@ public class RedBlack {
     }
 
     public void insert(int key) {
-        Node z = root.parent;
-        Node y = this.root;
-        while (!y.nil) {
-            z = y;
-            y = (key < y.key) ? y.left : y.right;
+        Node z;
+        // restart point
+        while (true) {
+            z = root.parent;
+            while (!root.flag.compareAndSet(false, true)) ;
+            Node y = this.root;
+            while (!y.nil) {
+                z = y;
+                y = (key < y.key) ? y.left : y.right;
+                if (!y.flag.compareAndSet(false, true)) {
+                    z.flag.set(false);
+                    break; //restart
+                }
+                if (!y.nil) z.flag.set(false);
+            }
+            if(!setupLocalAreaForInsert(z)) {
+                z.flag.set(false);
+            } else {
+                break;
+            }
         }
         Node x = new Node(RED, key, z);
+        x.flag.set(true);
         // z is the nil root parent, the node is the first one in the tree
         if (z == root.parent) {
             this.root = x;
@@ -40,68 +56,37 @@ public class RedBlack {
         }
         insertFixup(x);
 
-//        while (true) {
-//            Node z = root;
-//            while (!z.flag.compareAndSet(false, true)) ;
-//            Node y = this.root;
-//
-//            while (!y.nil) {
-//                z = y;
-//                y = (key < y.key) ? y.left.get() : y.right.get();
-//                // y has been modified, release flag and restart search
-//                if (!y.flag.compareAndSet(true, false)) {
-//                    z.flag.compareAndSet(true, false);
-//                    break;
-//                }
-//                if (!y.nil) {
-//                    z.flag.compareAndSet(true, false);
-//                }
-//            }
-//
-//            Node x = new Node(RED, key);
-//            // try to fetch local area flags
-//            if (!setupLocalAreaForInsert(z)) {
-//                // couldn't fetch local area flags, retry
-//                z.flag.compareAndSet(false, true);
-//                break;
-//            }
-//
-//            // place new node as a child of z
-//            if (z == this.root) {
-//                // TODO i have no clue here
-//            } else if (key < z.key) {
-//                z.left = x;
-//            } else {
-//                z.right = x;
-//            }
-//
-//            insertFixup(x);
-//            break;
-//        }
     }
 
     // try to get flags for rest of the local area for insert
-    private boolean setupLocalAreaForInsert(Node target, Node parent) {
+    private boolean setupLocalAreaForInsert(Node z) {
+        Node parent = z.parent;
         // try and flag the parent
         if (!parent.flag.compareAndSet(false, true)) {
             return false;
         }
         // ensure the parent has not been changed
-        if (parent != target.parent) {
-            parent.flag.compareAndSet(true, false);
+        if (parent != z.parent) {
+            parent.flag.set(false);
             return false;
         }
         // grab and flag the sibling of the target
-        Node sibling = (parent.left == target) ? parent.right : parent.left;
+        Node sibling = (parent.left == z) ? parent.right : parent.left;
         if (!sibling.flag.compareAndSet(false, true)) {
-            parent.flag.compareAndSet(true, false);
+            parent.flag.set(false);
             return false;
         }
-        // TODO: add saved values to check if the sibling is the same before and after marked
+        // ensure sibling has not been changes
+        // TODO: not in pseudocode, experimental
+        if (((parent.left == z) ? parent.right : parent.left) != sibling) {
+            parent.flag.set(false);
+            sibling.flag.set(false);
+            return false;
+        }
         // try to get the flags and markers above the target
-        if (!getFlagsAndMarkersAbove(parent, target)) {
-            parent.flag.compareAndSet(true, false);
-            sibling.flag.compareAndSet(true, false);
+        if (!getFlagsAndMarkersAbove(z.parent, z)) {
+            parent.flag.set(false);
+            sibling.flag.set(false);
             return false;
         }
         return true;
@@ -131,6 +116,7 @@ public class RedBlack {
                     y.color = BLACK;
                     x.grandparent().color = RED;
                     x = x.parent.parent;
+                    x = moveInserterUp(x);
                 // parent's sibling is not RED and requires a rebalance
                 } else {
                     // CASE 2 -- new node is right child, rotate the subtree under x's parents left to compensate
@@ -153,6 +139,7 @@ public class RedBlack {
                     y.color = BLACK;
                     x.grandparent().color = RED;
                     x = x.parent.parent;
+                    x = moveInserterUp(x);
                 } else {
                     // CASE 2
                     if (x == x.parent.left) {
@@ -169,8 +156,8 @@ public class RedBlack {
         root.color = BLACK;
     }
 
-    private void moveInserterUp() {
-
+    private Node moveInserterUp(Node x) {
+        return x;
     }
 
     // rebalance the tree under x with +1 to left side and -1 to right side (counter-clockwise rotation)
