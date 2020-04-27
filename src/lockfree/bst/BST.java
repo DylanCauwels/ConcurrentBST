@@ -1,8 +1,10 @@
 package lockfree.bst;
 
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicStampedReference;
 
-public class BST {
+public class BST implements util.TreeInterface {
     // dummies necessary for unchanging 3 nodes of tree
     private int dummyOne = Integer.MAX_VALUE - 1;
     private int dummyTwo = Integer.MAX_VALUE;
@@ -213,4 +215,5 @@ public class BST {
         }
         return false;
     }
+
 }

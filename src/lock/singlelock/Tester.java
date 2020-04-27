@@ -1,20 +1,18 @@
-package lock.bst;
+package lock.singlelock;
 
 import org.junit.Test;
+import org.junit.Assert;
 
+import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class Tester {
-    // monkey with different directions can be executed by threads
     class ThreadBSTAdder implements Runnable {
 
-        private BST bst;
-        private ConcurrentHashMap<Integer, Integer> map;
+        private SLBST bst;
 
-        ThreadBSTAdder(BST bst, ConcurrentHashMap<Integer, Integer> map) {
+        ThreadBSTAdder(SLBST bst) {
             this.bst = bst;
-            this.map = map;
         }
 
         // implement run method for thread
@@ -25,12 +23,11 @@ public class Tester {
                     int random = r.nextInt(500);
                     //System.out.println("trying to insert: " + random);
                     if(bst.insert(random)) {
-                        map.put(random, 0);
                         //System.out.println("Successfully added " + random);
                     }
                     else
                         //System.out.println("Duplicate encountered,  "+random+" already exists");
-                    Thread.sleep(10);
+                        Thread.sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -45,12 +42,10 @@ public class Tester {
 
     class ThreadBSTSingleAddRemove implements Runnable {
 
-        private BST bst;
-        private ConcurrentHashMap<Integer, Integer> map;
+        private SLBST bst;
 
-        ThreadBSTSingleAddRemove(BST bst, ConcurrentHashMap<Integer, Integer> map) {
+        ThreadBSTSingleAddRemove(SLBST bst) {
             this.bst = bst;
-            this.map = map;
         }
 
         // implement run method for thread
@@ -75,12 +70,10 @@ public class Tester {
     }
 
     class ThreadBSTRemover implements Runnable {
-        private BST bst;
-        private ConcurrentHashMap<Integer, Integer> map;
+        private SLBST bst;
 
-        public ThreadBSTRemover(BST bst, ConcurrentHashMap<Integer, Integer> map) {
+        public ThreadBSTRemover(SLBST bst) {
             this.bst = bst;
-            this.map = map;
         }
 
         @Override
@@ -91,10 +84,10 @@ public class Tester {
                     int random = r.nextInt(500);
                     //System.out.println("trying to delete: " + random);
                     if (bst.delete(random)){}
-                        //System.out.println("Successfully removed " + random);
+                    //System.out.println("Successfully removed " + random);
                     else
                         //System.out.println(random + " doesnt exist in the tree");
-                    Thread.sleep(10);
+                        Thread.sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -108,9 +101,9 @@ public class Tester {
 
     class ThreadBSTSingleAddRemoveContains implements Runnable {
 
-        private BST bst;
+        private SLBST bst;
 
-        ThreadBSTSingleAddRemoveContains(BST bst) {
+        ThreadBSTSingleAddRemoveContains(SLBST bst) {
             this.bst = bst;
         }
 
@@ -139,19 +132,18 @@ public class Tester {
     @Test
     public void testOneDirectionMonkey() throws InterruptedException {
 
-        BST bst = new BST();
-        ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>();
+        SLBST bst = new SLBST();
         int numNodes = 500;
         Thread[] threads = new Thread[numNodes];
         for (int i = 0; i < numNodes; ++i) {
             // each thread tries to insert 5 elements to bst
-            threads[i] = new Thread(new ThreadBSTAdder(bst, map));
+            threads[i] = new Thread(new ThreadBSTAdder(bst));
             threads[i].start();
             threads[i].join();
         }
         for (int i = 0; i < numNodes; ++i) {
             // each thread tries to insert 5 elements to bst
-            threads[i] = new Thread(new ThreadBSTRemover(bst, map));
+            threads[i] = new Thread(new ThreadBSTRemover(bst));
             threads[i].start();
             threads[i].join();
         }
@@ -161,13 +153,12 @@ public class Tester {
 
     @Test
     public void test1() throws InterruptedException {
-        BST bst = new BST();
-        ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>();
+        SLBST bst = new SLBST();
         int numNodes = 1000;
         Thread[] threads = new Thread[numNodes];
         for (int i = 0; i < numNodes; ++i) {
             // each thread tries to insert 5 elements to bst
-            threads[i] = new Thread(new ThreadBSTSingleAddRemove(bst, map));
+            threads[i] = new Thread(new ThreadBSTSingleAddRemove(bst));
             threads[i].start();
             threads[i].join();
         }
@@ -183,7 +174,7 @@ public class Tester {
 
     @Test
     public void containsTest() throws InterruptedException {
-        BST bst = new BST();
+        SLBST bst = new SLBST();
         int numNodes = 1000;
         Thread[] threads = new Thread[numNodes];
         for (int i = 0; i < numNodes; ++i) {
@@ -191,7 +182,14 @@ public class Tester {
             threads[i].start();
             threads[i].join();
         }
-        bst.inorderTraversal();
+        ArrayList<Integer> slbstOutput = bst.inorderTraversalTester();
+
+        incTest(slbstOutput);
     }
 
+    public void incTest(ArrayList<Integer> list) {
+        for (int i = 1; i < list.size(); i++) {
+            Assert.assertTrue(list.get(i-1) < list.get(i));
+        }
+    }
 }

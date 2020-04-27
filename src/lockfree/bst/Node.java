@@ -10,4 +10,8 @@ public class Node {
     public String toString() {
         return "" + key;
     }
+
+    public int getKey() {
+        return key;
+    }
 }
