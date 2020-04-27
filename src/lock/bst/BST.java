@@ -235,7 +235,13 @@ public class BST implements util.TreeInterface {
     }
 
     public boolean contains(int key){
+        treelock.lock();
+        if (root == null) {
+            treelock.unlock();
+            return false;
+        }
         this.root.lock.lock();
+        treelock.unlock();
         return containsHelper(this.root,key);
     }
 
@@ -333,7 +339,6 @@ public class BST implements util.TreeInterface {
     }
 
     public ArrayList<Integer> inorderTraversalTester (){
-        System.out.println("\n");
         ArrayList<Integer> output = new ArrayList<>();
         if(root != null){
             iotTester(root.left, output);
