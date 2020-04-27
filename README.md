@@ -4,6 +4,18 @@ The implementation of our 361C Term Project prompt: concurrent lockfree and fine
 
 ---
 
+## Getting Started
+1. download the java IDE of your choice (our project files are from IntelliJ)
+2. create a new project (or import ours)
+3. include our src/ folder as a project source module
+4. add a JUnit run configuration for one of the following options or run the classes directly
+
+#### Options
+* test the fine-grained lockbased bst and compare it to a single-lock lockbased bst with  **_src/lock/Tester_**
+* test the lockfree bst with **_src/lockfree/bst/Tester_**
+* compare the single-lock, fine-grained, and lockfree bst's with **_src/Tester_**
+
+---
 ## Binary Search Trees
 
 ### Description
