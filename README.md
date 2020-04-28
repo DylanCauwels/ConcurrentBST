@@ -71,10 +71,10 @@ The attempted implmentation is based on a paper by Kim, Cameron, and Graham that
 
 ---
 
-### Testing Outline
+## Testing Outline
 There are two types of test, correctness and performance comparison.
 
-#### Performance
+### Performance
 There are four performance comparison tests. They all compare performance between the 
 lock based, lock free, and sequential BST implementations for the three standard BST operations: insert, delete, and contains.
 
@@ -98,19 +98,18 @@ The **mix** test inserts 100,000 elements in the same five variations as the **i
 in milliseconds and measured from the start of the insert to the end of the delete operations. Results are shown below:
 ![Mix Plot](./references/mix_plot.PNG)
 
-#### Correctness
+### Correctness
 Each implementation contains its own suite of tests to ensure correctness. In addition, there are correctness tests that concurrently utilize
 all three implementations and ensure their final outputs are equivalent.
 
-#### Running
-* each tree implementation contains a unit test in the corresponding package that can be run to test correctness
-* the larger testing class in the root directory can be used to compare performance between tree implementations (redblack vs bst && lockfree vs lockbased)
+### Running
+See [Getting Started](#gettting-started) for instructions on how to run the tests.
 
+## Credits
 ### Built With
 
 * [Java SE 8](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html) - language used
 * [IntelliJ](https://www.jetbrains.com/idea/) - IDE
-
 
 ### Authors
 
