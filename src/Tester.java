@@ -288,7 +288,6 @@ public class Tester {
     //  1,000 threads
     //  10,000 threads
     //  100,000 threads
-    //  1 million threads
     @Test
     public void timing_delete() throws InterruptedException {
         // set up
@@ -296,7 +295,7 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of inserts each thread will perform
-        int elements = 500;
+        int elements = 100000;
         int[] inserted = new int[elements];
         // create Runnables
         Deleter[] deleters= new Deleter[3];
@@ -335,7 +334,6 @@ public class Tester {
     //  1,000 threads
     //  10,000 threads
     //  100,000 threads
-    //  1 million threads
     @Test
     public void timing_contains() throws InterruptedException {
         // set up
@@ -343,7 +341,7 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of inserts each thread will perform
-        int elements = 10000;
+        int elements = 1000;
         int[] inserted = new int[elements];
         // create Runnables
         ContainChecker[] checkers = new ContainChecker[3];
@@ -380,7 +378,7 @@ public class Tester {
     // inserts are performed simultaneously with deletes
     // will run with these configs:
     //  1 thread, 100,000 inserts per thread
-    //  5 threads, 50,000 inserts per thread
+    //  5 threads, 20,000 inserts per thread
     //  100 threads, 1,000 inserts per thread
     //  10,000 threads, 10 inserts per thread
     @Test
@@ -394,7 +392,7 @@ public class Tester {
         // number of inserts each thread will perform
         int in_per_thread = 5;
         // max key possible for inserters
-        int bound = 1000;
+        int bound = 250000;
         // create inserters
         Inserter[] inserters = new Inserter[3];
         inserters[0] = new Inserter(lockBST, in_per_thread, bound);

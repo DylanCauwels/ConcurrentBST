@@ -32,7 +32,8 @@ Allow insertion, deletion, and searching in a constrained _O(h)_ time where _h_ 
 ![Class Diagram](./references/LockbasedBST.png)
 
 ### Lockfree
-
+This implementation is based on a paper by Ellen, Fatourou, Ruppert, and Breugel that can be found 
+[here](https://dl.acm.org/doi/10.1145/1835698.1835736)
 ![Class Diagram](./references/LockfreeBST.png)
 
 ---
@@ -60,8 +61,33 @@ _still in progress_
 
 ---
 
-### Running the tests
+### Testing
+There are two types of test, correctness and performance comparison.
 
+#### Performance
+There are four performance comparison tests. They all compare performance between the 
+lock based, lock free, and sequential BST implementations for the three standard BST operations: insert, delete, and contains.
+
+The **insert** test inserts 100,000 elements into the list four different ways: 1 thread x 100,000 inserts, 5 threads x 20,000 inserts, 
+100 threads x 1,000 inserts, and 10,000 threads x 10 inserts. Elapsed time for each implementation is recorded in milliseconds and shown below:
+
+The **delete** test inserts random elements sequentially into the BST and then spins up a thread per element for concurrent deletion. It is run
+for 500, 1,000, 10,000, and 100,000 elements. Elapsed time is recorded in milliseconds and measured only for the delete operation.
+Results are shown below:
+
+The **contains** test inserts random elements sequentially into the BST and then spins up a thread per element for concurrent calls to contains.
+It is run for 500, 1,000, 10,000, and 100,000 elements. Elapsed time is recorded in milliseconds and measured only for the contains operation. 
+Results are shown below:
+
+The **mix** test inserts 100,000 elements in the same four variations as the **insert** test. These elements are randomly pulled from the range
+1 - 25,000. Then, 25,000 delete threads are created to delete the values 1 - 25,000 from the tree concurrently. Elapsed time is recorded 
+in milliseconds and measured from the start of the insert to the end of the delete operations. Results are shown below:
+
+#### Correctness
+Each implementation contains its own suite of tests to ensure correctness. In addition, there are correctness tests that concurrently utilize
+all three implementations and ensure their final outputs are equivalent.
+
+#### Running
 * each tree implementation contains a unit test in the corresponding package that can be run to test correctness
 * the larger testing class in the root directory can be used to compare performance between tree implementations (redblack vs bst && lockfree vs lockbased)
 
@@ -81,5 +107,5 @@ _still in progress_
 <!-- See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project. -->
 
 ### Acknowledgments
-* [**Ellen, Faith & Fatourou, Panagiota & Ruppert, Eric & Breugel, Franck**. (2010). Non-blocking Binary Search Trees. Proceedings of the Annual ACM Symposium on Principles of Distributed Computing. 131-140. 10.1145/1835698.1835736.](https://www.researchgate.net/publication/221344000_Non-blocking_Binary_Search_Trees)
+* [**Ellen, Faith & Fatourou, Panagiota & Ruppert, Eric & Breugel, Franck**. (2010). Non-blocking Binary Search Trees. Proceedings of the Annual ACM Symposium on Principles of Distributed Computing. 131-140. 10.1145/1835698.1835736.](https://dl.acm.org/doi/10.1145/1835698.1835736)
 * **Dr. Vijay Garg** -- _Professor_
