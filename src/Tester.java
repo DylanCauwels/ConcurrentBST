@@ -147,7 +147,7 @@ public class Tester {
 
     @Test
     public void runAllCorrectness() throws InterruptedException {
-        double iterations = 20;
+        double iterations = 10;
         double count = 0;
         for (int i = 0; i < iterations; i++) {
             try {

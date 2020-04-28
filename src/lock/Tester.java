@@ -221,7 +221,7 @@ public class Tester {
 
     @Test
     public void runAllCorrectness() {
-        double iterations = 100;
+        double iterations = 1;
         double count = 0;
         for (int i = 0; i < iterations; i++) {
             try {
