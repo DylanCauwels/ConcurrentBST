@@ -145,13 +145,28 @@ public class Tester {
 
     // ACTUAL TESTS //
 
+
+    @Test
+    public void testAll() throws InterruptedException{
+        System.out.println("Running correctnessAll");
+        runAllCorrectness();
+        System.out.println("Running timing_contains");
+        timing_contains();
+        System.out.println("Running timing_delete");
+        timing_delete();
+        System.out.println("Running timing_insert");
+        timing_insert();
+        System.out.println("Running timing_mix");
+        timing_mix();
+    }
+
     @Test
     public void runAllCorrectness() throws InterruptedException {
         double iterations = 10;
         double count = 0;
         for (int i = 0; i < iterations; i++) {
             try {
-                System.out.println(i+1);
+                //System.out.println(i+1);
                 correctnessInsertDelete();
                 correctnessInsertDeleteContains();
             }
@@ -193,12 +208,12 @@ public class Tester {
         incTest(sLockVals);
         Assert.assertArrayEquals("Comparing hand over hand locking and single lock ", sLockVals.toArray(), hohVals.toArray());
         Assert.assertArrayEquals("Comparing lockfree and single lock ", sLockVals.toArray(), lfreeVals.toArray());
-        System.out.print("Hand over Hand: ");
-        printArrays(hohVals);
-        System.out.print("Lock Free:      ");
-        printArrays(lfreeVals);
-        System.out.print("Single Lock:    ");
-        printArrays(sLockVals);
+//        System.out.print("Hand over Hand: ");
+//        printArrays(hohVals);
+//        System.out.print("Lock Free:      ");
+//        printArrays(lfreeVals);
+//        System.out.print("Single Lock:    ");
+//        printArrays(sLockVals);
     }
 
     @Test
@@ -232,12 +247,12 @@ public class Tester {
         incTest(sLockVals);
         Assert.assertArrayEquals("Comparing hand over hand locking and single lock ", sLockVals.toArray(), hohVals.toArray());
         Assert.assertArrayEquals("Comparing lockfree and single lock ", sLockVals.toArray(), lfreeVals.toArray());
-        System.out.print("Hand over Hand: ");
-        printArrays(hohVals);
-        System.out.print("Lock Free:      ");
-        printArrays(lfreeVals);
-        System.out.print("Single Lock:    ");
-        printArrays(sLockVals);
+//        System.out.print("Hand over Hand: ");
+//        printArrays(hohVals);
+//        System.out.print("Lock Free:      ");
+//        printArrays(lfreeVals);
+//        System.out.print("Single Lock:    ");
+//        printArrays(sLockVals);
     }
 
     // test to compare insert times across the three implementations
@@ -295,7 +310,7 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of inserts each thread will perform
-        int elements = 100000;
+        int elements = 10000;
         int[] inserted = new int[elements];
         // create Runnables
         Deleter[] deleters= new Deleter[3];

@@ -184,7 +184,6 @@ public class BST implements util.TreeInterface {
                 toDelete.lock.unlock();
             }
             else {
-                System.out.println(toDelete.val);
                 if (toDelete.parent.left == toDelete) {
                     toDelete.parent.left = successor;
                     successor.parent = toDelete.parent;
