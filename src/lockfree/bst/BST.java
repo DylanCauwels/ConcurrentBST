@@ -233,15 +233,18 @@ public class BST implements util.TreeInterface {
      */
     private boolean helpDelete(DeleteInfo op) {
         // attempt to mark the parent and continue with deletion
-        if (op.parent.update.compareAndSet(null, op, CLEAN, MARK)) {
-            helpMarked(op);
-            return true;
-        // abort and restart deletion
-        } else {
-            help(op.parent.update);
-            op.gParent.update.compareAndSet(op, null, DFLAG, CLEAN);
-            return false;
+        if (op != null && op.parent != null && op.parent.update != null) {
+            if (op.parent.update.compareAndSet(null, op, CLEAN, MARK)) {
+                helpMarked(op);
+                return true;
+                // abort and restart deletion
+            } else {
+                help(op.parent.update);
+                op.gParent.update.compareAndSet(op, null, DFLAG, CLEAN);
+                return false;
+            }
         }
+        return false;
     }
 
     /**

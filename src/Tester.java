@@ -241,9 +241,10 @@ public class Tester {
     }
 
     // test to compare insert times across the three implementations
+    // always inserting 100,000 elements, just different ways
     // will run with these configs:
     //  1 thread, 100,000 inserts per thread
-    //  5 threads, 50,000 inserts per thread
+    //  5 threads, 20,000 inserts per thread
     //  100 threads, 1,000 inserts per thread
     //  10,000 threads, 10 inserts per thread
     @Test
@@ -253,9 +254,9 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of concurrent threads
-        int numThreads = 1;
+        int numThreads = 10000;
         // number of inserts each thread will perform
-        int in_per_thread = 5;
+        int in_per_thread = 10;
         // endpoint of range for keys
         int bound = 25000;
         // create Runnables
@@ -266,7 +267,7 @@ public class Tester {
 
         // run each tree with the specified settings
         for(int j = 0; j<inserters.length; j++) {
-            long start = System.nanoTime();
+            long start = System.currentTimeMillis();
             Thread[] threads = new Thread[numThreads];
             for (int i = 0; i < threads.length; i++) {
                 threads[i] = new Thread(inserters[j], String.valueOf(i));
@@ -275,12 +276,13 @@ public class Tester {
             for (Thread t : threads) {
                 t.join();
             }
-            long elapsed = System.nanoTime() - start;
-            System.out.println("Time: " + elapsed);
+            long elapsed = System.currentTimeMillis() - start;
+            System.out.println(elapsed);
         }
     }
 
     // test to compare delete times across the three implementations
+    // always deleting the entire tree, just with different numbers of threads
     // will run with these configs:
     //  500 threads
     //  1,000 threads
@@ -294,37 +296,40 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of inserts each thread will perform
-        int elements = 10000;
+        int elements = 500;
+        int[] inserted = new int[elements];
         // create Runnables
         Deleter[] deleters= new Deleter[3];
         deleters[0] = new Deleter(lockBST);
         deleters[1] = new Deleter(lockfreeBST);
         deleters[2] = new Deleter(seqBST);
         // populate trees
+        Random r = new Random();
         for (int i = 0; i<elements; i++) {
-            lockBST.insert(i);
-            lockfreeBST.insert(i);
-            seqBST.insert(i);
+            inserted[i] = r.nextInt(25000);
+            lockBST.insert(inserted[i]);
+            lockfreeBST.insert(inserted[i]);
+            seqBST.insert(inserted[i]);
         }
         // run each tree with the specified settings
         // each deleter deletes only one element, so
         // we create a thread for every element
         for(int j = 0; j<deleters.length; j++) {
-            long start = System.nanoTime();
+            long start = System.currentTimeMillis();
             Thread[] threads = new Thread[elements];
             for (int i = 0; i < threads.length; i++) {
-                threads[i] = new Thread(deleters[j], String.valueOf(i));
+                threads[i] = new Thread(deleters[j], String.valueOf(inserted[i]));
                 threads[i].start();
             }
             for (Thread t : threads) {
                 t.join();
             }
-            long elapsed = System.nanoTime() - start;
-            System.out.println("Time: " + elapsed);
+            long elapsed = System.currentTimeMillis() - start;
+            System.out.println(elapsed);
         }
     }
 
-    // test to compare delete times across the three implementations
+    // test to compare concurrent search times across the three implementations
     // will run with these configs:
     //  500 threads
     //  1,000 threads
@@ -339,32 +344,35 @@ public class Tester {
         SLBST seqBST = new SLBST();
         // number of inserts each thread will perform
         int elements = 10000;
+        int[] inserted = new int[elements];
         // create Runnables
         ContainChecker[] checkers = new ContainChecker[3];
         checkers[0] = new ContainChecker(lockBST);
         checkers[1] = new ContainChecker(lockfreeBST);
         checkers[2] = new ContainChecker(seqBST);
         // populate trees
+        Random r = new Random();
         for (int i = 0; i<elements; i++) {
-            lockBST.insert(i);
-            lockfreeBST.insert(i);
-            seqBST.insert(i);
+            inserted[i] = r.nextInt(25000);
+            lockBST.insert(inserted[i]);
+            lockfreeBST.insert(inserted[i]);
+            seqBST.insert(inserted[i]);
         }
         // run each tree with the specified settings
         // each checker checks only one element, so
         // we create a thread for every element
         for(int j = 0; j<checkers.length; j++) {
-            long start = System.nanoTime();
+            long start = System.currentTimeMillis();
             Thread[] threads = new Thread[elements];
             for (int i = 0; i < threads.length; i++) {
-                threads[i] = new Thread(checkers[j], String.valueOf(i));
+                threads[i] = new Thread(checkers[j], String.valueOf(inserted[i]));
                 threads[i].start();
             }
             for (Thread t : threads) {
                 t.join();
             }
-            long elapsed = System.nanoTime() - start;
-            System.out.println("Time: " + elapsed);
+            long elapsed = System.currentTimeMillis() - start;
+            System.out.println(elapsed);
         }
     }
 
