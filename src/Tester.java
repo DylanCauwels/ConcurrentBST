@@ -294,7 +294,7 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of inserts each thread will perform
-        int elements = 10000;
+        int elements = 500;
         // create Runnables
         Deleter[] deleters= new Deleter[3];
         deleters[0] = new Deleter(lockBST);
