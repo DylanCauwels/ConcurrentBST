@@ -261,6 +261,7 @@ public class Tester {
     //  1 thread, 100,000 inserts per thread
     //  5 threads, 20,000 inserts per thread
     //  100 threads, 1,000 inserts per thread
+    //  1,000 threads, 100 inserts per thread
     //  10,000 threads, 10 inserts per thread
     @Test
     public void timing_insert() throws InterruptedException {
@@ -310,7 +311,7 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of inserts each thread will perform
-        int elements = 10000;
+        int elements = 100000;
         int[] inserted = new int[elements];
         // create Runnables
         Deleter[] deleters= new Deleter[3];
@@ -395,6 +396,7 @@ public class Tester {
     //  1 thread, 100,000 inserts per thread
     //  5 threads, 20,000 inserts per thread
     //  100 threads, 1,000 inserts per thread
+    //  1,000 threads, 1000 inserts per thread
     //  10,000 threads, 10 inserts per thread
     @Test
     public void timing_mix() throws InterruptedException {
@@ -403,11 +405,11 @@ public class Tester {
         lockfree.bst.BST lockfreeBST = new lockfree.bst.BST();
         SLBST seqBST = new SLBST();
         // number of concurrent threads
-        int numThreads = 1;
+        int numThreads = 10000;
         // number of inserts each thread will perform
-        int in_per_thread = 5;
+        int in_per_thread = 10;
         // max key possible for inserters
-        int bound = 250000;
+        int bound = 25000;
         // create inserters
         Inserter[] inserters = new Inserter[3];
         inserters[0] = new Inserter(lockBST, in_per_thread, bound);
@@ -420,7 +422,7 @@ public class Tester {
         deleters[2] = new Deleter(seqBST);
         // run each tree with the specified settings
         for(int j = 0; j<inserters.length; j++) {
-            long start = System.nanoTime();
+            long start = System.currentTimeMillis();
             Thread[] threads = new Thread[numThreads];
             Thread[] deleteThreads = new Thread[bound];
             for (int i = 0; i < threads.length; i++) {
@@ -437,8 +439,8 @@ public class Tester {
             for (Thread t : deleteThreads) {
                 t.join();
             }
-            long elapsed = System.nanoTime() - start;
-            System.out.println("Time: " + elapsed);
+            long elapsed = System.currentTimeMillis() - start;
+            System.out.println(elapsed);
         }
     }
 }

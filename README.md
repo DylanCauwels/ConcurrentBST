@@ -68,8 +68,10 @@ There are two types of test, correctness and performance comparison.
 There are four performance comparison tests. They all compare performance between the 
 lock based, lock free, and sequential BST implementations for the three standard BST operations: insert, delete, and contains.
 
-The **insert** test inserts 100,000 elements into the list four different ways: 1 thread x 100,000 inserts, 5 threads x 20,000 inserts, 
-100 threads x 1,000 inserts, and 10,000 threads x 10 inserts. Elapsed time for each implementation is recorded in milliseconds and shown below:
+The **insert** test inserts 100,000 elements into the list five different ways: 1 thread x 100,000 inserts, 5 threads x 20,000 inserts, 
+100 threads x 1,000 inserts, 1,000 threads x 100 inserts, and 10,000 threads x 10 inserts. Elapsed time for each implementation is 
+recorded in milliseconds and shown below:
+![Insert Plot](./references/insert_plot.PNG)
 
 The **delete** test inserts random elements sequentially into the BST and then spins up a thread per element for concurrent deletion. It is run
 for 500, 1,000, 10,000, and 100,000 elements. Elapsed time is recorded in milliseconds and measured only for the delete operation.
@@ -79,7 +81,7 @@ The **contains** test inserts random elements sequentially into the BST and then
 It is run for 500, 1,000, 10,000, and 100,000 elements. Elapsed time is recorded in milliseconds and measured only for the contains operation. 
 Results are shown below:
 
-The **mix** test inserts 100,000 elements in the same four variations as the **insert** test. These elements are randomly pulled from the range
+The **mix** test inserts 100,000 elements in the same five variations as the **insert** test. These elements are randomly pulled from the range
 1 - 25,000. Then, 25,000 delete threads are created to delete the values 1 - 25,000 from the tree concurrently. Elapsed time is recorded 
 in milliseconds and measured from the start of the insert to the end of the delete operations. Results are shown below:
 
