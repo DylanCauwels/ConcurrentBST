@@ -66,7 +66,7 @@ _still in progress_
 ### Lockfree
 _still in progress_
 
-The attempted implmentation is based on a paper by Kim, Cameron, and Graham that can be found
+The attempted implementation is based on a paper by Kim, Cameron, and Graham that can be found
 [here](https://www.cs.umanitoba.ca/~hacamero/Research/RBTreesKim.pdf).
 
 ---
